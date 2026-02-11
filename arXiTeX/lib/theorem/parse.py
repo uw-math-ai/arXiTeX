@@ -41,7 +41,7 @@ def parse_paper(
         Parsed theorems, all checked for validity.
     """
 
-    if timeout > 0:
+    if timeout is not None and timeout > 0:
         @run_with_timeout(seconds=timeout)
         def parse_paper_with_timeout():
             return parse_paper(
