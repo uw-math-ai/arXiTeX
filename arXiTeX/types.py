@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List, Enum
+from typing import Optional, List
+from enum import Enum
 
 class Paper(BaseModel):
     """
