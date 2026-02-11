@@ -1,36 +1,42 @@
+"""
+Main file of paper module. Provides a helper to iterate over arXiv metadata.
+"""
+
 import zipfile
 import io
 import json
 from typing import Iterator, List
 from pathlib import Path
-from .types import Paper
-from .lib.download_arxiv_metadata import download_arxiv_metadata
-from .lib.citations import fetch_paper_citations
+from arXiTeX.types import Paper
+from .download_arxiv_metadata import download_arxiv_metadata
+from .citations import fetch_paper_citations
+from .default_categories import DEFAULT_CATEGORIES
 
-def catalog_papers(
+def paper_catalog(
     download_dir: Path | str,
-    categories: List[str],
+    categories: List[str] = DEFAULT_CATEGORIES,
     batch_size: int = 100
-) -> Iterator[Paper]:
+) -> Iterator[List[Paper]]:
     """
     Generator that yields arXiv paper metadata. Filters by categories and returns results in the
-    specified batch size.
+    specified batch size. Citations work best with a SemanticScholar API key stored as
+    SEMANTIC_SCHOLAR_API_KEY in your '.env'.
 
     Parameters
     ----------
     download_dir : Path | str
         Path to directory of 'arxiv.zip', the zip of the arXiv Kaggle dataset. If this directory
         doesn't include 'arxiv.zip', just downloads it there with a progress bar.
-    categories : List[str]
+    categories : List[str], optional
         List of categories to filter papers by. Specify either the whole category name (i.e.
-        math.AG) or just the main category (i.e. math).
+        math.AG) or just the main category (i.e. math). Default, our recommended arXiv categories.
     batch_size : int, optional
         Size of batch of paper metadatas to yield. Default, 100
     
     Returns
     -------
-    paper_catalog : Iterator[Paper]
-        Iterator of paper metadatas
+    paper_catalog : Iterator[List[Paper]]
+        Iterator of paper metadatas. Yields batches of papers.
     """
 
     if isinstance(download_dir, str):

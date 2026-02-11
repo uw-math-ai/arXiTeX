@@ -9,8 +9,7 @@ from typing import List
 
 def fetch_paper_citations(arxiv_ids: List[str], retries: int = 3) -> List[int | None]:
     """
-    Fetches the count of a paper's citations by its arXiv id. First, tries Semantic Scholar, then
-    OpenAlex, then returns None.
+    Fetches the count of a paper's citations by its arXiv id. Uses SemanticScholar.
 
     Parameters
     ----------
@@ -60,18 +59,6 @@ def fetch_paper_citations(arxiv_ids: List[str], retries: int = 3) -> List[int | 
             return fetch_paper_citations(arxiv_ids, retries - 1)
         else:
             pass
-
-    # try: # search OpenAlex by arXiv id
-    #     alex_res = requests.get(f"https://api.openalex.org/works/doi:10.48550/arXiv.{arxiv_id}", timeout=10)
-
-    #     if alex_res.ok:
-    #         alex_data = alex_res.json()
-    #         k = alex_data.get("cited_by_count")
-
-    #         if isinstance(k, int):
-    #             return k
-    # except Exception:
-    #     pass
 
     return [None for _ in arxiv_ids]
 

@@ -1,5 +1,9 @@
-from pathlib import Path
+"""
+Helper to download all arXiv metadata from the Kaggle arXiv dataset.
+"""
+
 import requests
+from pathlib import Path
 from tqdm import tqdm
 
 def download_arxiv_metadata(download_dir: Path):

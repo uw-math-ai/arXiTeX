@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arXiTeX"
+version = "0.1.0"
+description = "Library for building the TheoremSearch dataset"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+authors = [
+  { name = "Eric Leonen", email = "ericleonen@gmail.com" }
+]
+
+dependencies = [
+  "plasTeX @ git+https://github.com/plastex/plastex.git",
+  "pylatexenc",
+  "requests",
+  "kaggle",
+  "pydantic
+]
+
+[project.scripts]
+arXiTeX = "arXiTeX.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["arXiTeX*"]
