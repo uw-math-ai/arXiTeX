@@ -1,0 +1,4 @@
+pydantic
+pathlib
+git+https://github.com/plastex/plastex.git@master
+kaggle
