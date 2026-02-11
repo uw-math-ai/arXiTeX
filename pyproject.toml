@@ -19,7 +19,7 @@ dependencies = [
   "pylatexenc",
   "requests",
   "kaggle",
-  "pydantic
+  "pydantic"
 ]
 
 [project.scripts]
