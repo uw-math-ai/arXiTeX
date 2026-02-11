@@ -29,7 +29,7 @@ The full internal dataset contains:
 
 -   9M+ theorems
 -   From ~700,000 papers
--   Primarily sourced from arXiv
+-   Sourced from [arxiv](arxiv.org) (primarily), [ProofWiki](https://proofwiki.org/wiki/Main_Page), [The Stacks Project](https://stacks.math.columbia.edu/), and many more
 
 However, only ~15% of arXiv papers use permissive licenses (CC BY, CC
 BY-SA, CC0). For that reason, we *cannot* distribute the full dataset.
@@ -90,6 +90,15 @@ for paper_batch in paper_catalog(
 ```
 
 This yields batches of structured `Paper` objects.
+
+We use [SemanticScholar](https://www.semanticscholar.org/) for citation counts. Therefore, the generator works best with a SemanticScholar API key (https://www.semanticscholar.org/product/api):
+
+In a `.env`:
+```
+SEMANTIC_SCHOLAR_API_KEY=...
+```
+
+Otherwise, please consider using a tiny `batch_size` (e.g. 1 or 2) and adding delays in your `paper_catalog` loop.
 
 ------------------------------------------------------------------------
 
@@ -160,14 +169,13 @@ class Theorem(BaseModel):
     proof: Optional[str]
 ```
 
-Field explanations:
+Notes:
 
--   `type` --- environment type
--   `ref` --- visible numbering in the paper
--   `note` --- optional theorem title or caption
--   `label` --- internal LaTeX label
--   `body` --- raw LaTeX theorem body (simple macros resolved)
--   `proof` --- raw LaTeX proof (if present)
+-   `type` is either `Theorem`, `Lemma`, `Proposition`, or `Corollary`
+-   `note` is an optional theorem title or caption
+-   `label` is an internal LaTeX label (i.e `\label{...}`)
+-   `body` is the raw LaTeX theorem body with simple macros resolved
+-   `proof` is the raw LaTeX proof (if present) with simple macros resolved
 
 ------------------------------------------------------------------------
 
