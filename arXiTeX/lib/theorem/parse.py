@@ -8,7 +8,7 @@ from typing import List, Optional
 from tempfile import TemporaryDirectory
 from argparse import ArgumentParser
 from arXiTeX.types import Theorem, TheoremValidationLevel
-from .download_arxiv_paper import download_arxiv_paper
+from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
 from .parse_by_plastex import parse_by_plastex
 from .validate_theorems import validate_theorems, validate_theorem
 from .run_with_timeout import run_with_timeout

@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+
+\title{Sample Paper with Citations}
+\author{Test Author}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This paper builds on recent advances in machine learning \cite{vaswani2017attention} and optimization theory \cite{kingma2014adam}.
+
+\section{Main Results}
+
+\begin{theorem}\label{thm:main}
+Let $f: \mathbb{R}^n \to \mathbb{R}$ be a convex function. Then the gradient descent algorithm converges to the global minimum, as shown in \cite{nesterov2003introductory}.
+\end{theorem}
+
+\begin{proof}
+The proof follows from standard techniques in convex optimization \cite{boyd2004convex}.
+\end{proof}
+
+\begin{lemma}\label{lem:auxiliary}
+Under the assumptions of Theorem \ref{thm:main}, the convergence rate is $O(1/k)$ for strongly convex functions. This was first established in \cite{nesterov2003introductory} and refined in \cite{polyak1964some}.
+\end{lemma}
+
+\begin{corollary}
+The result extends to the stochastic setting \cite{kingma2014adam, robbins1951stochastic}.
+\end{corollary}
+
+\section{Applications to Deep Learning}
+
+Recent work on transformers \cite{vaswani2017attention} has shown impressive results. When combined with adaptive learning rates \cite{kingma2014adam}, these methods achieve state-of-the-art performance.
+
+\begin{theorem}\label{thm:convergence}
+Neural networks trained with Adam converge under mild conditions \cite{kingma2014adam}.
+\end{theorem}
+
+\section{Related Work}
+
+Classical optimization methods \cite{polyak1964some, nesterov2003introductory} provide the foundation for modern deep learning algorithms. Convex optimization \cite{boyd2004convex} remains relevant for understanding convergence properties.
+
+\bibliographystyle{plain}
+\bibliography{main}
+
+\end{document}
