@@ -14,7 +14,7 @@ def _get_embedder(hg_embedder: str) -> SentenceTransformer:
 
     return embedder
 
-def embed_texts(
+def embed_texts_with_hg(
     hg_embedder: str,
     texts: List[str],
     prompt: Optional[str] = None
