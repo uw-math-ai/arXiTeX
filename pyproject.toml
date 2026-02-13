@@ -22,7 +22,8 @@ dependencies = [
   "pydantic",
   "jinja2",
   "torch",
-  "sentence_transformers"
+  "sentence_transformers",
+  "bibtexparser"
 ]
 
 [project.scripts]
