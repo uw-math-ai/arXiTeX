@@ -16,14 +16,21 @@ authors = [
 
 dependencies = [
   "plasTeX @ git+https://github.com/plastex/plastex.git",
-  "pylatexenc",
+  "boto3",
   "requests",
   "kaggle",
   "pydantic",
-  "jinja2",
-  "torch",
-  "sentence_transformers",
   "bibtexparser"
+]
+
+[project.optional-dependencies]
+slogan = [
+  "jinja2"
+]
+
+embedding = [
+  "torch",
+  "sentence_transformers"
 ]
 
 [project.scripts]

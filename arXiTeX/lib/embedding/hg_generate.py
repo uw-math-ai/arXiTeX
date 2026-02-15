@@ -1,18 +1,7 @@
-import torch
 import multiprocessing
 from typing import List, Optional
-from sentence_transformers import SentenceTransformer
 
-embedder: Optional[SentenceTransformer] = None
-def _get_embedder(hg_embedder: str) -> SentenceTransformer:
-    global embedder
-
-    if embedder is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        embedder = SentenceTransformer(hg_embedder, device=device)
-        embedder.eval()
-
-    return embedder
+embedder = None
 
 def embed_texts_with_hg(
     hg_embedder: str,
@@ -31,8 +20,18 @@ def embed_texts_with_hg(
     prompt : str, optional
         Prompt to give embedder. Default, None
     """
+    try:
+        import torch
+        from sentence_transformers import SentenceTransformer
+    except ImportError as e:
+        raise ImportError("Embedding features require `pip install arXiTeX[embedding]`") from e
 
-    embedder = _get_embedder(hg_embedder)
+    global embedder
+
+    if embedder is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        embedder = SentenceTransformer(hg_embedder, device=device)
+        embedder.eval()
 
     with torch.inference_mode():
         if embedder.device.type == "cpu":

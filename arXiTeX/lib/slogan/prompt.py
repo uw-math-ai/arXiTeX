@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Dict
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 def get_prompt(
     prompt_file: Path | str,
@@ -21,6 +20,10 @@ def get_prompt(
     prompt : str
         The filled in prompt.
     """
+    try:
+        from jinja2 import Environment, FileSystemLoader, StrictUndefined
+    except ImportError as e:
+        raise ImportError("Slogan features require `pip install arXiTeX[slogan]`") from e
 
     env = Environment(loader=FileSystemLoader("."), undefined=StrictUndefined)
     template = env.get_template(prompt_file)
