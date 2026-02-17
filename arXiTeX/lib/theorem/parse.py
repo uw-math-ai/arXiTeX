@@ -15,9 +15,12 @@ from .run_with_timeout import run_with_timeout
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
+    s3_bundle_key: Optional[str] = None,
+    s3_bytes_range: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper,
-    timeout : Optional[int] = None
+    timeout : Optional[int] = None,
+
 ) -> List[Theorem]:
     """
     Parses a LaTeX paper (from arXiv or a local file) for theorems. Validates the parsed theorems
@@ -27,6 +30,10 @@ def parse_paper(
     ----------
     arxiv_id : str, optional
         arXiv id of a paper. Either this or paper_path must be used.
+    s3_bundle_key: str, optional
+        Bundle key of paper in arXiv's S3 bucket. Default, None.
+    s3_bytes_range: str, optional
+        Bytes range of paper in arXiv's S3 bucket. Default, None.
     paper_path : Path | str, optional
         Path to a paper's LaTeX file or a folder of LaTeX files. Either this or arxiv_id must be
         used.
@@ -46,6 +53,8 @@ def parse_paper(
         def parse_paper_with_timeout():
             return parse_paper(
                 arxiv_id=arxiv_id,
+                s3_bundle_key=s3_bundle_key,
+                s3_bytes_range=s3_bytes_range,
                 paper_path=paper_path,
                 validation_level=validation_level,
                 timeout=None
@@ -55,7 +64,12 @@ def parse_paper(
 
     if arxiv_id is not None:
         with TemporaryDirectory() as temp_dir:
-            paper_dir = download_arxiv_paper(Path(temp_dir), arxiv_id)
+            paper_dir = download_arxiv_paper(
+                cwd=Path(temp_dir),
+                arxiv_id=arxiv_id,
+                s3_bundle_key=s3_bundle_key,
+                s3_bytes_range=s3_bytes_range
+            )
 
             return _parse_paper(paper_dir, validation_level=validation_level)
     elif paper_path is not None:
