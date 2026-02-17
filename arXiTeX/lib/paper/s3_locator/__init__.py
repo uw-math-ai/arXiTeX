@@ -1,7 +1,7 @@
 import boto3
 import tarfile
 import re
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, List
 from pydantic import BaseModel
 from tempfile import NamedTemporaryFile
 from tqdm import tqdm
@@ -18,7 +18,7 @@ def _normalize_arxiv_id(arxiv_id: str) -> str:
 
     return arxiv_id
 
-def s3_locator(arxiv_ids: Iterable) -> Iterator[S3Location]:
+def s3_locator(arxiv_ids: Iterable, batch_size: int) -> Iterator[List[S3Location]]:
     """
     Generator that yields locations in the S3 'arxiv' bucket for LaTeX sources of given arXiv ids.
     Useful for efficiently downloading arXiv LaTeX sources later.
@@ -27,6 +27,8 @@ def s3_locator(arxiv_ids: Iterable) -> Iterator[S3Location]:
     -----------
     arxiv_ids : Iterable
         arXiv ids to locate.
+    batch_size : int
+        Number of S3Locations to return in one batch.
 
     Returns
     -------
@@ -38,6 +40,8 @@ def s3_locator(arxiv_ids: Iterable) -> Iterator[S3Location]:
 
     s3 = boto3.client("s3")
     paginator = s3.get_paginator("list_objects_v2")
+
+    batch = []
     
     with tqdm(
         total=len(arxiv_ids), 
@@ -85,11 +89,15 @@ def s3_locator(arxiv_ids: Iterable) -> Iterator[S3Location]:
                                         if bundle_file.read(3) != b"\x1f\x8b\x08":
                                             raise RuntimeError("Bad gzip header")
                                         
-                                        yield S3Location(
+                                        batch.append(S3Location(
                                             arxiv_id=arxiv_id,
                                             bundle_key=bundle_key,
                                             bytes_range=f"bytes={bytes_start}-{bytes_end}"
-                                        )
+                                        ))
+
+                                        if len(batch) >= batch_size:
+                                            yield batch
+                                            batch.clear()
 
                                         del arxiv_ids[arxiv_id]
 
@@ -98,3 +106,7 @@ def s3_locator(arxiv_ids: Iterable) -> Iterator[S3Location]:
                                     pass
                 except:
                     pass
+
+        if len(batch) > 0:
+            yield batch
+            batch.clear()
