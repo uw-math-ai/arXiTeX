@@ -4,7 +4,6 @@ import re
 from typing import Iterable, Iterator, List
 from pydantic import BaseModel
 from tempfile import NamedTemporaryFile
-from tqdm import tqdm
 
 class S3Location(BaseModel):
     arxiv_id: str
@@ -23,8 +22,8 @@ def s3_locator(arxiv_ids: Iterable, batch_size: int) -> Iterator[List[S3Location
     Generator that yields locations in the S3 'arxiv' bucket for LaTeX sources of given arXiv ids.
     Useful for efficiently downloading arXiv LaTeX sources later.
 
-    Parrameters
-    -----------
+    Parameters
+    ----------
     arxiv_ids : Iterable
         arXiv ids to locate.
     batch_size : int
@@ -43,70 +42,63 @@ def s3_locator(arxiv_ids: Iterable, batch_size: int) -> Iterator[List[S3Location
 
     batch = []
     
-    with tqdm(
-        total=len(arxiv_ids), 
-        dynamic_ncols=True,
-        unit=" ids"
-    ) as pbar:
-        for bundle_page in paginator.paginate(
-            Bucket="arxiv",
-            Prefix="src/",
-            RequestPayer="requester"
-        ):
-            for bundle_obj in bundle_page.get("Contents", []):
-                bundle_key = bundle_obj["Key"]
-                
-                try:
-                    with NamedTemporaryFile() as bundle_file:
-                        s3.download_fileobj(
-                            "arxiv",
-                            bundle_key,
-                            bundle_file,
-                            ExtraArgs={"RequestPayer": "requester"},
-                        )
-                        bundle_file.flush()
-                        bundle_file.seek(0)
+    for bundle_page in paginator.paginate(
+        Bucket="arxiv",
+        Prefix="src/",
+        RequestPayer="requester"
+    ):
+        for bundle_obj in bundle_page.get("Contents", []):
+            bundle_key = bundle_obj["Key"]
+            
+            try:
+                with NamedTemporaryFile() as bundle_file:
+                    s3.download_fileobj(
+                        "arxiv",
+                        bundle_key,
+                        bundle_file,
+                        ExtraArgs={"RequestPayer": "requester"},
+                    )
+                    bundle_file.flush()
+                    bundle_file.seek(0)
 
-                        with tarfile.open(fileobj=bundle_file, mode="r:") as bundle_tar:
-                            for member in bundle_tar.getmembers():
-                                if not member.isfile() or not member.name.endswith(".gz"):
-                                    continue
-                                if not getattr(member, "size", 0):
-                                    continue
-                                
-                                try:
-                                    member_id = member.name[:-3]
-                                    arxiv_id = _normalize_arxiv_id(member_id)
+                    with tarfile.open(fileobj=bundle_file, mode="r:") as bundle_tar:
+                        for member in bundle_tar.getmembers():
+                            if not member.isfile() or not member.name.endswith(".gz"):
+                                continue
+                            if not getattr(member, "size", 0):
+                                continue
+                            
+                            try:
+                                member_id = member.name[:-3]
+                                arxiv_id = _normalize_arxiv_id(member_id)
 
-                                    if arxiv_id in arxiv_ids:
-                                        bytes_start = getattr(member, "offset_data", None)
-                                        if bytes_start is None:
-                                            raise RuntimeError("member.offset_data is None")
+                                if arxiv_id in arxiv_ids:
+                                    bytes_start = getattr(member, "offset_data", None)
+                                    if bytes_start is None:
+                                        raise RuntimeError("member.offset_data is None")
 
-                                        bytes_end = bytes_start + member.size - 1
+                                    bytes_end = bytes_start + member.size - 1
 
-                                        bundle_file.seek(bytes_start)
-                                        if bundle_file.read(3) != b"\x1f\x8b\x08":
-                                            raise RuntimeError("Bad gzip header")
-                                        
-                                        batch.append(S3Location(
-                                            arxiv_id=arxiv_id,
-                                            bundle_key=bundle_key,
-                                            bytes_range=f"bytes={bytes_start}-{bytes_end}"
-                                        ))
+                                    bundle_file.seek(bytes_start)
+                                    if bundle_file.read(3) != b"\x1f\x8b\x08":
+                                        raise RuntimeError("Bad gzip header")
+                                    
+                                    batch.append(S3Location(
+                                        arxiv_id=arxiv_id,
+                                        bundle_key=bundle_key,
+                                        bytes_range=f"bytes={bytes_start}-{bytes_end}"
+                                    ))
 
-                                        if len(batch) >= batch_size:
-                                            yield batch
-                                            batch.clear()
+                                    if len(batch) >= batch_size:
+                                        yield batch
+                                        batch.clear()
 
-                                        del arxiv_ids[arxiv_id]
+                                    arxiv_ids.discard(arxiv_id)
+                            except:
+                                pass
+            except:
+                pass
 
-                                        pbar.update(1)
-                                except:
-                                    pass
-                except:
-                    pass
-
-        if len(batch) > 0:
-            yield batch
-            batch.clear()
+    if len(batch) > 0:
+        yield batch
+        batch.clear()
