@@ -72,7 +72,7 @@ def parse_paper(
             )
 
             if paper_dir is None:
-                raise RuntimeError(f"{ParseError.DONWLOAD}: Failed to download paper source")
+                raise RuntimeError(f"{ParseError.DONWLOAD.value}: Failed to download paper source")
 
             return _parse_paper(paper_dir, validation_level=validation_level)
     elif paper_path is not None:
@@ -88,9 +88,9 @@ def parse_paper(
 
                 return _parse_paper(paper_dir, validation_level=validation_level)
         else:
-            raise FileNotFoundError(f"{ParseError.DOWNLOAD}: Downloaded paper source not found")
+            raise FileNotFoundError(f"{ParseError.DOWNLOAD.value}: Downloaded paper source not found")
     else:
-        raise ValueError(f"{ParseError.SYNTAX}: arxiv_id and paper_path are both None")
+        raise ValueError(f"{ParseError.SYNTAX.value}: arxiv_id and paper_path are both None")
 
 def _parse_paper(
     paper_dir: Path,
@@ -99,7 +99,7 @@ def _parse_paper(
     try:
         theorems: List[Theorem] = parse_by_plastex(paper_dir)
     except Exception as e:
-        raise RuntimeError(f"{ParseError.PLASTEX}: {str(e)}")
+        raise RuntimeError(f"{ParseError.PLASTEX.value}: {str(e)}")
 
     match validation_level:
         case TheoremValidationLevel.Theorem:
@@ -113,7 +113,7 @@ def _parse_paper(
                     pass
 
             if len(valid_theorems) == 0:
-                raise ValueError(f"{ParseError.VALIDATION}: All parsed theorems are invalid")
+                raise ValueError(f"{ParseError.VALIDATION.value}: All parsed theorems are invalid")
 
             return valid_theorems
         
