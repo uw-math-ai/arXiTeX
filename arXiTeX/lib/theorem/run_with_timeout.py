@@ -28,7 +28,7 @@ def run_with_timeout(seconds: int):
             if p.is_alive():
                 p.terminate()
                 p.join()
-                raise TimeoutError(f"{ParseError.TIMEOUT.value}: Parsing took longer than {seconds} seconds)")
+                raise TimeoutError(f"{ParseError.TIMEOUT.value}: Parsing took longer than {seconds} seconds")
             else:
                 try:
                     tag, payload = q.get_nowait()
