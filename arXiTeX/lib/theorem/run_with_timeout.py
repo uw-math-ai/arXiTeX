@@ -1,5 +1,6 @@
 from multiprocessing import Process, Queue
 import queue as queue_mod
+from .errors import ParseError
 
 def run_with_timeout(seconds: int):
     """
@@ -27,12 +28,12 @@ def run_with_timeout(seconds: int):
             if p.is_alive():
                 p.terminate()
                 p.join()
-                raise TimeoutError(f"Timeout (> {seconds} seconds)")
+                raise TimeoutError(f"{ParseError.TIMEOUT.value}: Parsing took longer than {seconds} seconds)")
             else:
                 try:
                     tag, payload = q.get_nowait()
                 except queue_mod.Empty:
-                    raise RuntimeError("Child process exited without returning")
+                    raise RuntimeError(f"{ParseError.UNKNOWN.value}: Child process exited without returning")
 
                 if tag == "err":
                     _, msg = payload

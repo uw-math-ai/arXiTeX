@@ -12,6 +12,7 @@ from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
 from .parse_by_plastex import parse_by_plastex
 from .validate_theorems import validate_theorems, validate_theorem
 from .run_with_timeout import run_with_timeout
+from .errors import ParseError
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
@@ -71,6 +72,9 @@ def parse_paper(
                 s3_bytes_range=s3_bytes_range
             )
 
+            if paper_dir is None:
+                raise RuntimeError(f"{ParseError.DONWLOAD}: Failed to download paper source")
+
             return _parse_paper(paper_dir, validation_level=validation_level)
     elif paper_path is not None:
         if isinstance(paper_path, str):
@@ -85,15 +89,18 @@ def parse_paper(
 
                 return _parse_paper(paper_dir, validation_level=validation_level)
         else:
-            raise FileNotFoundError(f"{paper_path} does not exist")
+            raise FileNotFoundError(f"{ParseError.DOWNLOAD}: Downloaded paper source not found")
     else:
-        raise ValueError("arxiv_id and paper_path are both None")
+        raise ValueError(f"{ParseError.SYNTAX}: arxiv_id and paper_path are both None")
 
 def _parse_paper(
     paper_dir: Path,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper
 ) -> List[Theorem]:
-    theorems: List[Theorem] = parse_by_plastex(paper_dir)
+    try:
+        theorems: List[Theorem] = parse_by_plastex(paper_dir)
+    except Exception as e:
+        raise RuntimeError(f"{ParseError.PLASTEX}: {str(e)}")
 
     match validation_level:
         case TheoremValidationLevel.Theorem:
@@ -106,14 +113,15 @@ def _parse_paper(
                 except Exception:
                     pass
 
+            if len(valid_theorems) == 0:
+                raise ValueError(f"{ParseError.VALIDATION}: All parsed theorems are invalid")
+
             return valid_theorems
         
         case TheoremValidationLevel.Paper:
-            try:
-                validate_theorems(theorems)
-                return theorems
-            except Exception:
-                return []
+            validate_theorems(theorems)
+
+            return theorems
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()

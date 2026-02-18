@@ -1,35 +1,36 @@
 from arXiTeX.types import Theorem, TheoremType
 from typing import List
+from .errors import ParseError
 
 def _validate_type(theorem: Theorem):
     if not theorem.type in [t.value for t in TheoremType]:
-        raise ValueError(f"Theorem has invalid type: `{theorem.type}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem has invalid type `{theorem.type}`")
     
 def _validate_ref(theorem: Theorem):
     if not theorem.ref:
-        raise ValueError(f"Theorem has no ref")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem has no ref")
     
 def _validate_body(theorem: Theorem):
     body = theorem.body.lower().strip()
 
     if not body:
-        raise ValueError("Empty theorem body")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem body is empty")
 
     dollar_count = body.count("$")
     if dollar_count % 2 == 1:
-        raise ValueError(f"Theorem body has unbalanced math delimiters: `{body}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem body has unbalanced math delimiters `{body}`")
 
     if len(body) < 8:
-        raise ValueError(f"Theorem body is too short: `{body}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem body is too short `{body}`")
 
     if len(body) < 32 and not body.endswith(".") and dollar_count == 0:
-        raise ValueError(f"Theorem body is likely truncated: `{body}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem body is likely truncated `{body}`")
 
     if body.endswith((
         " and", " or", "such that", " where", " let", " then", "for all", 
         "(", "[", "{", ",", ":", ";", "=", "<", "%")
     ):
-        raise ValueError(f"Theorem body is likely truncated: `{body}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem body is likely truncated `{body}`")
     
 def _validate_proof(theorem: Theorem):
     if theorem.proof is None:
@@ -38,23 +39,23 @@ def _validate_proof(theorem: Theorem):
     proof = theorem.proof.lower().strip()
 
     if not proof:
-        raise ValueError("Empty theorem proof")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem proof is empty")
 
     dollar_count = proof.count("$")
     if dollar_count % 2 == 1:
-        raise ValueError(f"Theorem proof has unbalanced math delimiters: `{proof}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem proof has unbalanced math delimiters `{proof}`")
 
     if len(proof) < 8:
-        raise ValueError(f"Theorem proof is too short: `{proof}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem proof is too short `{proof}`")
 
     if len(proof) < 32 and not proof.endswith(".") and dollar_count == 0:
-        raise ValueError(f"Theorem proof is likely truncated: `{proof}`")
+        raise ValueError(f"{ParseError.VALIDATION}:Theorem proof is likely truncated `{proof}`")
 
     if proof.endswith((
         " and", " or", "such that", " where", " let", " then", "for all", 
         "(", "[", "{", ",", ":", ";", "=", "<", "%")
     ):
-        raise ValueError(f"Theorem proof is likely truncated: `{proof}`")
+        raise ValueError(f"{ParseError.VALIDATION}: Theorem proof is likely truncated `{proof}`")
     
 def _validate_uniqueness(theorems: List[Theorem]):
     names = set()
@@ -67,7 +68,7 @@ def _validate_uniqueness(theorems: List[Theorem]):
         ] if p is not None)
 
         if name in names:
-            raise ValueError(f"Multiple theorems have the same name `{name}`")
+            raise ValueError(f"{ParseError.VALIDATION}: Multiple theorems have the same name `{name}`")
         else:
             names.add(name)
 

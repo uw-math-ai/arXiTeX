@@ -22,7 +22,7 @@ def download_arxiv_paper(
     arxiv_id: str,
     s3_bundle_key: Optional[str] = None,
     s3_bytes_range: Optional[str] = None
-) -> Optional[Path]:
+) -> Path:
     """
     Downloads a arXiv paper's source files from S3 or the API.
 
@@ -39,8 +39,8 @@ def download_arxiv_paper(
         
     Returns
     -------
-    paper_dir : Optional[Path]
-        The paper's downloaded source files. None if download failed
+    paper_dir : Path
+        The paper's downloaded source files.
     """
 
     if (s3_bundle_key is not None) and (s3_bytes_range is not None):

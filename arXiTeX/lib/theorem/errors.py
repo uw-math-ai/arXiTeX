@@ -1,0 +1,10 @@
+from enum import Enum
+
+class ParseError(Enum):
+    TIMEOUT = "TIMEOUT ERROR"
+    UNKNOWN = "UNKNOWN ERROR"
+    SYNTAX = "SYNTAX ERROR"
+    DONWLOAD = "DOWNLOAD ERROR"
+    PLASTEX = "PLASTEX ERROR"
+    VALIDATION = "VALIDATION ERROR"
+
