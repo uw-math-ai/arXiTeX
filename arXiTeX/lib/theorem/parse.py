@@ -20,8 +20,7 @@ def parse_paper(
     s3_bytes_range: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper,
-    timeout : Optional[int] = None,
-
+    timeout : Optional[int] = None
 ) -> List[Theorem]:
     """
     Parses a LaTeX paper (from arXiv or a local file) for theorems. Validates the parsed theorems
