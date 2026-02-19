@@ -64,16 +64,16 @@ def parse_paper(
 
     if arxiv_id is not None:
         with TemporaryDirectory() as temp_dir:
-            paper_dir = download_arxiv_paper(
-                cwd=Path(temp_dir),
-                arxiv_id=arxiv_id,
-                s3_bundle_key=s3_bundle_key,
-                s3_bytes_range=s3_bytes_range
-            )
-
-            if paper_dir is None:
-                raise RuntimeError(f"{ParseError.DONWLOAD.value}: Failed to download paper source")
-
+            try:
+                paper_dir = download_arxiv_paper(
+                    cwd=Path(temp_dir),
+                    arxiv_id=arxiv_id,
+                    s3_bundle_key=s3_bundle_key,
+                    s3_bytes_range=s3_bytes_range
+                )
+            except Exception as e:
+                raise RuntimeError(f"{ParseError.DONWLOAD.value}: {e}")
+                
             return _parse_paper(paper_dir, validation_level=validation_level)
     elif paper_path is not None:
         if isinstance(paper_path, str):

@@ -53,37 +53,31 @@ def download_arxiv_paper(
     safe_id = arxiv_id.replace("/", "-")
     paper_dir = cwd / safe_id
 
+    if s3_mode:
+        s3 = _get_s3()
+
+        res = s3.get_object(
+            Bucket="arxiv",
+            Key=s3_bundle_key,
+            Range=s3_bytes_range,
+            RequestPayer="requester"
+        )
+
+        b = res["Body"].read()
+    else:
+        paper_res = requests.get(f"https://arxiv.org/src/{arxiv_id}")
+        paper_res.raise_for_status()
+
+        b = paper_res.content
+
+    paper_dir.mkdir(exist_ok=False)
+    unzipped = gzip.decompress(b)
+
     try:
-        if s3_mode:
-            s3 = _get_s3()
-
-            res = s3.get_object(
-                Bucket="arxiv",
-                Key=s3_bundle_key,
-                Range=s3_bytes_range,
-                RequestPayer="requester"
-            )
-
-            b = res["Body"].read()
-        else:
-            paper_res = requests.get(f"https://arxiv.org/src/{arxiv_id}")
-            paper_res.raise_for_status()
-
-            b = paper_res.content
-
-        paper_dir.mkdir(exist_ok=False)
-        unzipped = gzip.decompress(b)
-
-        try:
-            with tarfile.open(fileobj=io.BytesIO(unzipped), mode="r:*") as tf:
-                tf.extractall(path=paper_dir)
-        except:
-            with open(paper_dir / "main.tex", "wb") as main_file:
-                main_file.write(unzipped)
-
-        return paper_dir
+        with tarfile.open(fileobj=io.BytesIO(unzipped), mode="r:*") as tf:
+            tf.extractall(path=paper_dir)
     except:
-        return None
+        with open(paper_dir / "main.tex", "wb") as main_file:
+            main_file.write(unzipped)
 
-
-    
+    return paper_dir
