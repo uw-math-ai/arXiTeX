@@ -12,7 +12,7 @@ from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
 from .parse_by_plastex import parse_by_plastex
 from .validate_theorems import validate_theorems, validate_theorem
 from .run_with_timeout import run_with_timeout
-from .errors import ParseError
+from .errors import ParseError, format_error
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
@@ -72,7 +72,10 @@ def parse_paper(
                     s3_bytes_range=s3_bytes_range
                 )
             except Exception as e:
-                raise RuntimeError(f"{ParseError.DONWLOAD.value}: {e}")
+                raise RuntimeError(format_error(
+                    ParseError.DOWNLOAD,
+                    str(e)
+                ))
                 
             return _parse_paper(paper_dir, validation_level=validation_level)
     elif paper_path is not None:
@@ -88,9 +91,15 @@ def parse_paper(
 
                 return _parse_paper(paper_dir, validation_level=validation_level)
         else:
-            raise FileNotFoundError(f"{ParseError.DOWNLOAD.value}: Downloaded paper source not found")
+            raise FileNotFoundError(format_error(
+                ParseError.DOWNLOAD,
+                "Downloaded paper source not found"
+            ))
     else:
-        raise ValueError(f"{ParseError.SYNTAX.value}: arxiv_id and paper_path are both None")
+        raise FileNotFoundError(format_error(
+            ParseError.SYNTAX,
+            "arxiv_id and paper_path are both None"
+        ))
 
 def _parse_paper(
     paper_dir: Path,
@@ -99,7 +108,10 @@ def _parse_paper(
     try:
         theorems: List[Theorem] = parse_by_plastex(paper_dir)
     except Exception as e:
-        raise RuntimeError(f"{ParseError.PLASTEX.value}: {str(e)}")
+        raise RuntimeError(format_error(
+            ParseError.PLASTEX,
+            str(e)
+        ))
 
     match validation_level:
         case TheoremValidationLevel.Theorem:
@@ -113,7 +125,10 @@ def _parse_paper(
                     pass
 
             if len(valid_theorems) == 0:
-                raise ValueError(f"{ParseError.VALIDATION.value}: All parsed theorems are invalid")
+                raise ValueError(format_error(
+                    ParseError.VALIDATION,
+                    "All theorems are invalid"
+                ))
 
             return valid_theorems
         
@@ -121,52 +136,3 @@ def _parse_paper(
             validate_theorems(theorems)
 
             return theorems
-
-if __name__ == "__main__":
-    arg_parser = ArgumentParser()
-
-    arg_parser.add_argument(
-        "--arxiv-id",
-        type=str,
-        required=False,
-        default="",
-        help="arXiv id of a paper"
-    )
-
-    arg_parser.add_argument(
-        "--paper-path",
-        type=str,
-        required=False,
-        default="",
-        help="Path to a LaTeX file or directory of LaTeX files"
-    )
-
-    arg_parser.add_argument(
-        "-o",
-        "--output-file",
-        type=str,
-        required=True,
-        help="Path to output JSONL file"
-    )
-
-    arg_parser.add_argument(
-        "-v",
-        "--validation-level",
-        type=TheoremValidationLevel,
-        required=False,
-        default="paper",
-        help="Level to validate theorems. Supported: paper (default), theorem"
-    )
-
-    args = arg_parser.parse_args()
-
-    theorems: List[Theorem] = parse_paper(
-        arxiv_id=args.arxiv_id or None,
-        paper_path=args.paper_path or None,
-        validation_level=args.validation_level
-    )
-
-    json_out = "\n".join(theorem.model_dump_json() for theorem in theorems)
-    out_path = Path(args.output_file)
-    
-    out_path.write_text(json_out)

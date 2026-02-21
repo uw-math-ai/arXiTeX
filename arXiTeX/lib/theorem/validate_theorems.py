@@ -1,61 +1,66 @@
 from arXiTeX.types import Theorem, TheoremType
 from typing import List
-from .errors import ParseError
+from .errors import ParseError, format_error
 
 def _validate_type(theorem: Theorem):
     if not theorem.type in [t.value for t in TheoremType]:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem has invalid type `{theorem.type}`")
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem has invalid type `{theorem.type}`"
+        ))
     
 def _validate_ref(theorem: Theorem):
     if not theorem.ref:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem has no ref")
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            "Theorem has no ref"
+        ))
     
-def _validate_body(theorem: Theorem):
-    body = theorem.body.lower().strip()
+def _validate_body(theorem: Theorem, do_proof: bool = False):
+    if do_proof:
+        if theorem.proof is None:
+            return
+        body = theorem.proof
+        w = "proof"
+    else:
+        body = theorem.body
+        w = "body"
 
-    if not body:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem body is empty")
+    clean_body = body.lower().strip()
 
-    dollar_count = body.count("$")
+    if not clean_body:
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem {w} is empty"
+        ))
+
+    dollar_count = clean_body.count("$")
     if dollar_count % 2 == 1:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem body has unbalanced math delimiters `{body}`")
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem {w} has unbalanced math delimeters: `{body}`"
+        ))
 
-    if len(body) < 8:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem body is too short `{body}`")
+    if len(clean_body) < 8:
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem {w} is too short: `{body}`"
+        ))
 
-    if len(body) < 32 and not body.endswith(".") and dollar_count == 0:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem body is likely truncated `{body}`")
+    if len(clean_body) < 32 and not clean_body.endswith(".") and dollar_count == 0:
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem {w} is likely truncated: `{body}`"
+        ))
 
-    if body.endswith((
+    if clean_body.endswith((
         " and", " or", "such that", " where", " let", " then", "for all", 
         "(", "[", "{", ",", ":", ";", "=", "<", "%")
     ):
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem body is likely truncated `{body}`")
-    
-def _validate_proof(theorem: Theorem):
-    if theorem.proof is None:
-        return
-
-    proof = theorem.proof.lower().strip()
-
-    if not proof:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem proof is empty")
-
-    dollar_count = proof.count("$")
-    if dollar_count % 2 == 1:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem proof has unbalanced math delimiters `{proof}`")
-
-    if len(proof) < 8:
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem proof is too short `{proof}`")
-
-    if len(proof) < 32 and not proof.endswith(".") and dollar_count == 0:
-        raise ValueError(f"{ParseError.VALIDATION.value}:Theorem proof is likely truncated `{proof}`")
-
-    if proof.endswith((
-        " and", " or", "such that", " where", " let", " then", "for all", 
-        "(", "[", "{", ",", ":", ";", "=", "<", "%")
-    ):
-        raise ValueError(f"{ParseError.VALIDATION.value}: Theorem proof is likely truncated `{proof}`")
+        raise ValueError(format_error(
+            ParseError.VALIDATION,
+            f"Theorem {w} is likely truncated: `{body}`"
+        ))
     
 def _validate_uniqueness(theorems: List[Theorem]):
     names = set()
@@ -68,7 +73,11 @@ def _validate_uniqueness(theorems: List[Theorem]):
         ] if p is not None)
 
         if name in names:
-            raise ValueError(f"{ParseError.VALIDATION.value}: Multiple theorems have the same name `{name}`")
+            raise ValueError(format_error(
+                ParseError.VALIDATION,
+                f"Multiple theorems have the same name: `{name}`"
+            ))
+
         else:
             names.add(name)
 
@@ -89,7 +98,7 @@ def validate_theorem(theorem: Theorem):
     _validate_type(theorem)
     _validate_ref(theorem)
     _validate_body(theorem)
-    _validate_proof(theorem)
+    _validate_body(theorem, do_proof=True)
 
 def validate_theorems(theorems: List[Theorem]):
     """
