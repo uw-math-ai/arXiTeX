@@ -96,7 +96,7 @@ def validate_theorem(theorem: Theorem):
     """
 
     _validate_type(theorem)
-    _validate_ref(theorem)
+    # _validate_ref(theorem)
     _validate_body(theorem)
     _validate_body(theorem, do_proof=True)
 

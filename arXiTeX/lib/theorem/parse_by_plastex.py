@@ -94,6 +94,6 @@ def parse_by_plastex(
                 proof=proof or None
             ))
 
-    theorems.sort(key=attrgetter("ref"))
+    theorems.sort(key=lambda t: (t.ref is None, t.ref or ""))
 
     return theorems

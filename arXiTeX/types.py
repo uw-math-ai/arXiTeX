@@ -65,7 +65,7 @@ class Theorem(BaseModel):
     """
 
     type: TheoremType
-    ref: str
+    ref: Optional[str] = None
     note: Optional[str] = None
     label: Optional[str] = None
     body: str
