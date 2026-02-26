@@ -1,4 +1,5 @@
 import re
+import io
 from pathlib import Path
 from plasTeX.TeX import TeX
 from typing import List, Dict, Optional
@@ -40,6 +41,21 @@ def parse_by_plastex(
     theorems: List[Theorem] = []
     tex = TeX()
 
+    # Robust Configuration:
+    # 1. Disable loading of raw LaTeX implementations of packages. 
+    # This prevents crashes on complex packages like biblatex/adjustbox 
+    # which aren't needed for theorem extraction anyway.
+    tex.ownerDocument.config['general']['load-tex-packages'] = False
+
+    # 2. Allow shadowing of common primitives.
+    # PlasTeX normally prevents \newcommand/\renewcommand from overwriting 
+    # core primitives like \v (accent). By unregistering them here, we allow 
+    # authors to use these common names for their own math macros.
+    primitives_to_allow_shadowing = ['v', 'u', 'd', 'b']
+    for cmd in primitives_to_allow_shadowing:
+        if cmd in tex.ownerDocument.context.contexts[0]:
+            del tex.ownerDocument.context.contexts[0][cmd]
+
     with use_texinputs(paper_dir), use_plastex_log_capturer():
         with open(main_file, "r", errors="ignore") as f:
             tex.input(f)
@@ -79,7 +95,11 @@ def parse_by_plastex(
 
                     for proof_node in current_node.getElementsByTagName("proof"):
                         _, _, _, proof = parse_node(proof_node)
-                        current_node.removeChild(proof_node)
+                        
+                        try:
+                            current_node.removeChild(proof_node)
+                        except Exception:
+                            pass
                         break
 
                     proof_lookahead_left -= 1
