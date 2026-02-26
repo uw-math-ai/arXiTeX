@@ -46,21 +46,22 @@ POINTS_CONFIG = [
 def _score_file(file: Path) -> float:
     score = 0.0
     
-    for line in file.open(errors="ignore"):
-        line = remove_line_comments(line)
-        match_found = False
+    with file.open(errors="ignore") as fh:
+        for line in fh:
+            line = remove_line_comments(line)
+            match_found = False
 
-        for pattern_group in POINTS_CONFIG:
-            if match_found:
-                break
-
-            for pattern in pattern_group["patterns"]:
+            for pattern_group in POINTS_CONFIG:
                 if match_found:
                     break
 
-                if pattern in line:
-                    score += pattern_group["points"]
-                    match_found = True
+                for pattern in pattern_group["patterns"]:
+                    if match_found:
+                        break
+
+                    if pattern in line:
+                        score += pattern_group["points"]
+                        match_found = True
 
     return score
 

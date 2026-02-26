@@ -7,7 +7,7 @@ from arXiTeX.types import TheoremType
 """
 Extensions a file that includes theorem environment definitions can have
 """
-THEOREM_ENV_DEF_EXTENSIONS = { "*.tex", "*.latex", "*.ltx", "*.sty", "*.cls" }
+THEOREM_ENV_DEF_EXTENSIONS = {".tex", ".latex", ".ltx", ".sty", ".cls"}
 
 NEWTHEOREM_RE = re.compile(r"""
 \\newtheorem
@@ -75,8 +75,9 @@ def extract_theorem_envs(
         for alias in aliases:
             theorem_envs[alias] = theorem_type
 
-    search_files = itertools.chain.from_iterable(
-        paper_dir.rglob(ext) for ext in THEOREM_ENV_DEF_EXTENSIONS
+    search_files = search_files = (
+        f for f in paper_dir.rglob("*")
+        if f.suffix in THEOREM_ENV_DEF_EXTENSIONS
     )
     
     for file in search_files:
