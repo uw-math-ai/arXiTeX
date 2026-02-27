@@ -7,6 +7,7 @@ class ParseError(Enum):
     DOWNLOAD = "DOWNLOAD"
     PLASTEX = "PLASTEX"
     VALIDATION = "VALIDATION"
+    EMPTY = "EMPTY"
 
 def format_error(
     error_type: ParseError,

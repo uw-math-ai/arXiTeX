@@ -112,6 +112,12 @@ def _parse_paper(
             ParseError.PLASTEX,
             str(e)
         ))
+    
+    if len(theorems) == 0:
+        raise RuntimeError(format_error(
+            ParseError.EMPTY,
+            "No theorems found"
+        ))
 
     match validation_level:
         case TheoremValidationLevel.Theorem:
