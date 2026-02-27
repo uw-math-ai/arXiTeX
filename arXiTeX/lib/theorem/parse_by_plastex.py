@@ -41,9 +41,12 @@ def parse_by_plastex(
     tex = TeX()
 
     with use_texinputs(paper_dir), use_plastex_log_capturer():
-        with open(main_file, "r", errors="ignore") as f:
-            tex.input(f)
-            doc = tex.parse()
+        f = open(main_file, "r", errors="ignore")
+
+        tex.input(f)
+        doc = tex.parse()
+        
+        f.close()
 
     proof_by_label: Dict[str, str] = {}
 
