@@ -75,6 +75,8 @@ def extract_theorem_envs(
         for alias in aliases:
             theorem_envs[alias] = theorem_type
 
+        theorem_envs[theorem_type.value] = theorem_type
+
     search_files = search_files = (
         f for f in paper_dir.rglob("*")
         if f.suffix in THEOREM_ENV_DEF_EXTENSIONS

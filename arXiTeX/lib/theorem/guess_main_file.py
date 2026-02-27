@@ -81,8 +81,11 @@ def guess_main_file(paper_dir: Path) -> Path:
         Best guess at the main file in `paper_dir`
     """
 
-    candidate_files = itertools.chain.from_iterable(
-        paper_dir.rglob(ext) for ext in MAIN_FILE_EXTENSIONS
+    candidate_files = itertools.chain(
+        itertools.chain.from_iterable(
+            paper_dir.rglob(ext) for ext in MAIN_FILE_EXTENSIONS
+        ),
+        (f for f in paper_dir.rglob("*") if f.is_file() and not f.suffix)
     )
     candidate_files = list(candidate_files)
 
@@ -93,7 +96,6 @@ def guess_main_file(paper_dir: Path) -> Path:
 
         # if mode == Mode.DEBUGGING:
         #     print(f"[DEBUG] Main file: {main_file.name} (only candidate)")
-
         return main_file
 
     main_file: Path = candidate_files[0]

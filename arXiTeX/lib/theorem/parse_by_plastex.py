@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 from plasTeX.TeX import TeX
 from typing import List, Dict, Optional
-from operator import attrgetter
 from .use_texinputs import use_texinputs
 from .parse_node import parse_node
 from .use_plastex_log_capturer import use_plastex_log_capturer
