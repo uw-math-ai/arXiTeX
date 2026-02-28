@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue
+from multiprocessing import get_context
 import queue as queue_mod
 from .errors import ParseError, format_error
 
@@ -11,8 +11,9 @@ def _timeout_handler(queue, func, args, kwargs):
 def run_with_timeout(seconds: int):
     def decorator(func):
         def wraps(*args, **kwargs):
-            q = Queue()
-            p = Process(target=_timeout_handler, args=(q, func, args, kwargs))
+            ctx = get_context("fork")
+            q = ctx.Queue()
+            p = ctx.Process(target=_timeout_handler, args=(q, func, args, kwargs))
             p.start()
             p.join(timeout=seconds)
 

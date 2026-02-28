@@ -28,7 +28,7 @@ def parse_by_regex(
 
     theorems: List[Theorem] = []
 
-    flat_tex = flatten_tex(paper_dir, main_file)
+    flat_tex = flatten_tex(paper_dir, main_file, ignore_errors=True)
 
     envs = log_envs(flat_tex)
 

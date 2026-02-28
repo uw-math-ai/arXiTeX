@@ -80,7 +80,11 @@ def parse_paper(
                     str(e)
                 ))
                 
-            return _parse_paper(paper_dir, validation_level=validation_level)
+            return _parse_paper(
+                paper_dir, 
+                parsing_method=parsing_method, 
+                validation_level=validation_level
+            )
     elif paper_path is not None:
         if isinstance(paper_path, str):
             paper_path = Path(paper_path)
