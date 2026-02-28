@@ -53,7 +53,7 @@ def parse_paper(
 
     if timeout is not None and timeout > 0:
         @run_with_timeout(seconds=timeout)
-        def parse_paper_with_timeout():
+        def _timed():
             return parse_paper(
                 arxiv_id=arxiv_id,
                 s3_bundle_key=s3_bundle_key,
@@ -61,10 +61,9 @@ def parse_paper(
                 paper_path=paper_path,
                 parsing_method=parsing_method,
                 validation_level=validation_level,
-                timeout=None
+                timeout=None,
             )
-
-        return parse_paper_with_timeout()
+        return _timed()
 
     if arxiv_id is not None:
         with TemporaryDirectory() as temp_dir:
