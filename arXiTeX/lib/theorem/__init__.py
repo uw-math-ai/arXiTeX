@@ -6,10 +6,10 @@ import shutil
 from pathlib import Path
 from typing import List, Optional
 from tempfile import TemporaryDirectory
-from argparse import ArgumentParser
-from arXiTeX.types import Theorem, TheoremValidationLevel
+from arXiTeX.types import Theorem, TheoremValidationLevel, ParsingMethod
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
-from .parse_by_plastex import parse_by_plastex
+from .methods.plasTeX.parse import parse_by_plastex
+from .methods.regex.parse import parse_by_regex
 from .validate_theorems import validate_theorems, validate_theorem
 from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
@@ -19,6 +19,7 @@ def parse_paper(
     s3_bundle_key: Optional[str] = None,
     s3_bytes_range: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
+    parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper,
     timeout : Optional[int] = None
 ) -> List[Theorem]:
@@ -37,6 +38,8 @@ def parse_paper(
     paper_path : Path | str, optional
         Path to a paper's LaTeX file or a folder of LaTeX files. Either this or arxiv_id must be
         used.
+    parsing_method : ParsingMethod, optional
+        Method to parse. By default, plasTeX.
     validation_level : TheoremValidationLevel, optional
         Level at which to validate theorems. By default, paper-level.
     timeout : int, optional
@@ -56,6 +59,7 @@ def parse_paper(
                 s3_bundle_key=s3_bundle_key,
                 s3_bytes_range=s3_bytes_range,
                 paper_path=paper_path,
+                parsing_method=parsing_method,
                 validation_level=validation_level,
                 timeout=None
             )
@@ -83,13 +87,21 @@ def parse_paper(
             paper_path = Path(paper_path)
         
         if paper_path.is_dir():
-            return _parse_paper(paper_path, validation_level=validation_level)
+            return _parse_paper(
+                paper_path,
+                parsing_method=parsing_method,
+                validation_level=validation_level
+            )
         elif paper_path.is_file():
             with TemporaryDirectory() as temp_dir:
                 paper_dir = Path(temp_dir)
                 shutil.copy2(paper_path, paper_dir / paper_path.name)
 
-                return _parse_paper(paper_dir, validation_level=validation_level)
+                return _parse_paper(
+                    paper_dir, 
+                    parsing_method=parsing_method,
+                    validation_level=validation_level
+                )
         else:
             raise FileNotFoundError(format_error(
                 ParseError.DOWNLOAD,
@@ -103,15 +115,25 @@ def parse_paper(
 
 def _parse_paper(
     paper_dir: Path,
+    parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper
 ) -> List[Theorem]:
-    try:
-        theorems: List[Theorem] = parse_by_plastex(paper_dir)
-    except Exception as e:
-        raise RuntimeError(format_error(
-            ParseError.PLASTEX,
-            str(e)
-        ))
+    if parsing_method == ParsingMethod.PLASTEX:
+        try:
+            theorems: List[Theorem] = parse_by_plastex(paper_dir)
+        except Exception as e:
+            raise RuntimeError(format_error(
+                ParseError.PLASTEX,
+                str(e)
+            ))
+    else:
+        try:
+            theorems: List[Theorem] = parse_by_regex(paper_dir)
+        except Exception as e:
+            raise RuntimeError(format_error(
+                ParseError.REGEX,
+                str(e)
+            ))
     
     if len(theorems) == 0:
         raise RuntimeError(format_error(

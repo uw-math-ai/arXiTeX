@@ -3,7 +3,7 @@ Script for parsing a single paper. Not useful for parsing many papers quickly.
 """
 
 from argparse import ArgumentParser
-from arXiTeX.types import TheoremValidationLevel, Theorem
+from arXiTeX.types import TheoremValidationLevel, Theorem, ParsingMethod
 from typing import List
 from arXiTeX.lib.theorem import parse_paper
 from pathlib import Path
@@ -38,6 +38,14 @@ if __name__ == "__main__":
     )
 
     arg_parser.add_argument(
+        "-m",
+        "--parsing-method",
+        type=ParsingMethod,
+        default="plasTeX",
+        help="Method to parse with. Supported: plasTeX (default), regex"
+    )
+
+    arg_parser.add_argument(
         "-v",
         "--validation-level",
         type=TheoremValidationLevel,
@@ -59,6 +67,7 @@ if __name__ == "__main__":
         theorems: List[Theorem] = parse_paper(
             arxiv_id=args.arxiv_id or None,
             paper_path=args.paper_path or None,
+            parsing_method=args.parsing_method,
             validation_level=args.validation_level
         )
 

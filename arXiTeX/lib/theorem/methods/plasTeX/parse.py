@@ -6,8 +6,8 @@ from .use_texinputs import use_texinputs
 from .parse_node import parse_node
 from .use_plastex_log_capturer import use_plastex_log_capturer
 from arXiTeX.types import Theorem
-from .guess_main_file import guess_main_file
-from .extract_theorem_envs import extract_theorem_envs
+from ...guess_main_file import guess_main_file
+from ...extract_theorem_envs import extract_theorem_envs
 
 _PROOF_NOTE_LABEL_RE = re.compile(
     r"\b(?:proof|proving)\b[^\n\\]*?\\(?:c|auto)?ref\s*\{\s*([^}]+?)\s*\}",

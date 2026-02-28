@@ -44,6 +44,10 @@ class TheoremType(str, Enum):
     Corollary = "corollary"
     Proposition = "proposition"
 
+class ParsingMethod(str, Enum):
+    PLASTEX = "plasTeX"
+    REGEX = "regex"
+
 class Theorem(BaseModel):
     """
     Theorem object.
