@@ -462,8 +462,8 @@ def log_envs(tex: str) -> list[Environment]:
     def _get_root(env: str) -> Optional[str]:
         if env not in thm_defs:
             return None
-        info = thm_defs[env]
-        return info["shared"] if info["shared"] else env
+        info = thm_defs.get(env, {})
+        return info["shared"] if info.get("shared") else env
 
     def _render_format(env: str, root: str, n: int) -> str:
         """
@@ -481,7 +481,7 @@ def log_envs(tex: str) -> list[Environment]:
 
         if not fmt_body:
             # No override — use the reset-level prefix + arabic by default
-            reset_level = thm_defs[root].get("reset") or thm_defs[env].get("reset")
+            reset_level = thm_defs.get(root, {}).get("reset") or thm_defs.get(env, {}).get("reset")
             prefix = section_tracker.prefix(reset_level)
             return f"{prefix}{n}"
 
@@ -520,7 +520,7 @@ def log_envs(tex: str) -> list[Environment]:
           2. \the<level> reference inside a \renewcommand{\the<env>}{...} body
         Returns the deepest section level implied, or None.
         """
-        explicit = thm_defs[root].get("reset") or thm_defs[env].get("reset")
+        explicit = thm_defs.get(root, {}).get("reset") or thm_defs.get(env, {}).get("reset")
         if explicit:
             return explicit
         # Check format body for \the<level> references
