@@ -120,7 +120,11 @@ def _expand(
         return f"% [tex_flatten] skipped duplicate include: {file_path.name}\n"
     seen.add(resolved)
 
-    text = resolved.read_text(encoding=encoding)
+    try:
+        text = resolved.read_text(encoding=encoding)
+    except UnicodeDecodeError:
+        text = resolved.read_text(encoding="latin-1")
+
     lines = text.splitlines(keepends=True)
     out   = []
 
