@@ -8,11 +8,11 @@ from typing import List, Optional
 from tempfile import TemporaryDirectory
 from arXiTeX.types import Theorem, TheoremValidationLevel, ParsingMethod
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
-from .methods.plasTeX.parse import parse_by_plastex
-from .methods.regex.parse import parse_by_regex
 from .validate_theorems import validate_theorems, validate_theorem
 from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
+from .guess_main_file import guess_main_file
+from .extract_theorem_envs import extract_theorem_envs
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
@@ -121,22 +121,30 @@ def _parse_paper(
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper
 ) -> List[Theorem]:
+    
+    try:
+        main_file = guess_main_file(paper_dir)
+        theorem_envs = extract_theorem_envs(paper_dir)
+    except Exception as e:
+        raise RuntimeError(format_error(
+            ParseError.PARSING,
+            str(e)
+        ))
+
     if parsing_method == ParsingMethod.PLASTEX:
-        try:
-            theorems: List[Theorem] = parse_by_plastex(paper_dir)
-        except Exception as e:
-            raise RuntimeError(format_error(
-                ParseError.PLASTEX,
-                str(e)
-            ))
+        from .methods.plasTeX import parse
+        error_type = ParseError.PLASTEX
     else:
-        try:
-            theorems: List[Theorem] = parse_by_regex(paper_dir)
-        except Exception as e:
-            raise RuntimeError(format_error(
-                ParseError.REGEX,
-                str(e)
-            ))
+        from .methods.regex import parse
+        error_type = ParseError.REGEX
+
+    try:
+        theorems: List[Theorem] = parse(paper_dir, main_file, theorem_envs)
+    except Exception as e:
+        raise RuntimeError(format_error(
+            error_type,
+            str(e)
+        ))
     
     if len(theorems) == 0:
         raise RuntimeError(format_error(

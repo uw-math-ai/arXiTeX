@@ -5,6 +5,7 @@ class ParseError(Enum):
     UNKNOWN = "UNKNOWN"
     SYNTAX = "SYNTAX"
     DOWNLOAD = "DOWNLOAD"
+    PARSING = "PARSING"
     PLASTEX = "PLASTEX"
     REGEX = "REGEX"
     VALIDATION = "VALIDATION"

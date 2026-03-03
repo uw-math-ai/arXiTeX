@@ -6,8 +6,6 @@ from .use_texinputs import use_texinputs
 from .parse_node import parse_node
 from .use_plastex_log_capturer import use_plastex_log_capturer
 from arXiTeX.types import Theorem
-from ...guess_main_file import guess_main_file
-from ...extract_theorem_envs import extract_theorem_envs
 
 _PROOF_NOTE_LABEL_RE = re.compile(
     r"\b(?:proof|proving)\b[^\n\\]*?\\(?:c|auto)?ref\s*\{\s*([^}]+?)\s*\}",
@@ -16,8 +14,10 @@ _PROOF_NOTE_LABEL_RE = re.compile(
 
 _PROOF_LOOKAHEAD = 3
 
-def parse_by_plastex(
-    paper_dir: Path
+def parse(
+    paper_dir: Path,
+    main_file: Path,
+    theorem_envs: Dict
 ) -> List[Theorem]:
     """
     Parses a paper's source files into a list of theorems using plasTeX.
@@ -32,10 +32,6 @@ def parse_by_plastex(
     theorems: List[Theorem]
         A list of plasTeX-parsed theorems
     """
-
-    main_file = guess_main_file(paper_dir)
-    theorem_envs = extract_theorem_envs(paper_dir)
-
     theorems: List[Theorem] = []
     tex = TeX()
 
