@@ -85,7 +85,7 @@ def paper_catalog(
                 batch.append(paper)
 
                 if len(batch) >= batch_size:
-                    ks, rs = fetch_paper_s2([paper.id for paper in batch])
+                    ks, rs = fetch_paper_s2([paper.arxiv_id for paper in batch])
                     for k, r, paper in zip(ks, rs, batch):
                         paper.citation_count = k
                         paper.reference_ids = r
@@ -94,7 +94,7 @@ def paper_catalog(
                     batch.clear()
 
             if len(batch) > 0:
-                ks, rs = fetch_paper_s2([paper.id for paper in batch])
+                ks, rs = fetch_paper_s2([paper.arxiv_id for paper in batch])
                 for k, r, paper in zip(ks, rs, batch):
                     paper.citation_count = k
                     paper.reference_ids = r
