@@ -7,20 +7,20 @@ import io
 import json
 from typing import Iterator, List
 from pathlib import Path
-from arXiTeX.types import Paper
+from arXiTeX.types import ArXivPaper
 from .download_arxiv_metadata import download_arxiv_metadata
-from .citations import fetch_paper_citations
+from .citations import fetch_paper_s2
 from .default_categories import DEFAULT_CATEGORIES
 
 def paper_catalog(
     download_dir: Path | str,
     categories: List[str] = DEFAULT_CATEGORIES,
     batch_size: int = 100
-) -> Iterator[List[Paper]]:
+) -> Iterator[List[ArXivPaper]]:
     """
     Generator that yields arXiv paper metadata. Filters by categories and returns results in the
-    specified batch size. Citations work best with a SemanticScholar API key stored as
-    SEMANTIC_SCHOLAR_API_KEY in your '.env'.
+    specified batch size. Citations and references work best with a SemanticScholar API key stored
+    as SEMANTIC_SCHOLAR_API_KEY in your '.env'.
 
     Parameters
     ----------
@@ -46,7 +46,7 @@ def paper_catalog(
     if not metadata_zip.exists():
         download_arxiv_metadata(download_dir)
         
-    batch: List[Paper] = []
+    batch: List[ArXivPaper] = []
 
     def category_match(row_categories: List[str]) -> bool:
         for rc in row_categories:
@@ -66,32 +66,37 @@ def paper_catalog(
                 if not category_match(row_categories):
                     continue
 
-                paper = Paper(
-                    id=paper_id,
+                paper = ArXivPaper(
+                    arxiv_id=paper_id,
                     title=row.get("title"),
-                    license=row.get("license"),
                     authors=[" ".join(filter(None, [f, *m, l])) for (l, f, *m) in row.get("authors_parsed")],
-                    link="https://arxiv.org/pdf/" + row.get("id"),
-                    abstract=row.get("abstract"),
-                    journal_ref=row.get("journal-ref"),
+                    url="https://arxiv.org/pdf/" + row.get("id"),
                     categories=row_categories,
-                    citations=None
+                    updated_at=row.get("update_date"),
+                    journal_ref=row.get("journal-ref"),
+                    doi=row.get("doi"),
+                    license=row.get("license"),
+                    abstract=row.get("abstract"),
+                    citation_count=None,
+                    reference_ids=[]
                 )
 
                 batch.append(paper)
 
                 if len(batch) >= batch_size:
-                    ks = fetch_paper_citations([paper.id for paper in batch])
-                    for k, paper in zip(ks, batch):
-                        paper.citations = k
+                    ks, rs = fetch_paper_s2([paper.id for paper in batch])
+                    for k, r, paper in zip(ks, rs, batch):
+                        paper.citation_count = k
+                        paper.reference_ids = r
 
                     yield batch
                     batch.clear()
 
             if len(batch) > 0:
-                ks = fetch_paper_citations([paper.id for paper in batch])
-                for k, paper in zip(ks, batch):
-                    paper.citations = k
+                ks, rs = fetch_paper_s2([paper.id for paper in batch])
+                for k, r, paper in zip(ks, rs, batch):
+                    paper.citation_count = k
+                    paper.reference_ids = r
 
                 yield batch
                 batch.clear()

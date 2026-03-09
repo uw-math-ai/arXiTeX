@@ -2,41 +2,19 @@ from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
 
-class Paper(BaseModel):
-    """
-    Paper object.
-
-    Attributes
-    ----------
-    id : str
-        The paper's identifier (i.e. the arXiv id)
-    title : str
-        The paper's title
-    license : str, optional
-        The paper's license, a link
-    authors : List[str]
-        The paper's authors. Names are formatted '<first> <middle> <last>'
-    link : str
-        A link to the paper
-    abstract : str
-        The paper's abstract
-    journal_ref : str, optional
-        The paper's journal reference, if published
-    categories : List[str]
-        The paper's categories. The first is the primary category followed by cross-listings
-    citations : int, optional
-        The paper's citation count
-    """
-
-    id: str
+class ArXivPaper(BaseModel):
+    arxiv_id: str
     title: str
-    license: Optional[str]
     authors: List[str]
-    link: str
-    abstract: str
-    journal_ref: Optional[str]
+    url: str
     categories: List[str]
-    citations: Optional[int]
+    updated_at: str
+    journal_ref: Optional[str]
+    doi: Optional[str]
+    license: Optional[str]
+    abstract: str
+    citation_count: Optional[int]
+    reference_ids: List[str]
 
 class TheoremType(str, Enum):
     Theorem = "theorem"
