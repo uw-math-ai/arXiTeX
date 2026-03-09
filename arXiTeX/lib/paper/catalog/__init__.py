@@ -7,6 +7,7 @@ import io
 import json
 from typing import Iterator, List
 from pathlib import Path
+from datetime import datetime, timezone
 from arXiTeX.types import ArXivPaper
 from .download_arxiv_metadata import download_arxiv_metadata
 from .citations import fetch_paper_s2
@@ -72,7 +73,7 @@ def paper_catalog(
                     authors=[" ".join(filter(None, [f, *m, l])) for (l, f, *m) in row.get("authors_parsed")],
                     url="https://arxiv.org/pdf/" + row.get("id"),
                     categories=row_categories,
-                    updated_at=row.get("update_date"),
+                    updated_at=datetime.strptime(row.get("update_date"), "%Y-%m-%d").replace(tzinfo=timezone.utc),
                     journal_ref=row.get("journal-ref"),
                     doi=row.get("doi"),
                     license=row.get("license"),

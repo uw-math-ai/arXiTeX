@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
+from datetime import datetime
 
 class ArXivPaper(BaseModel):
     arxiv_id: str
@@ -8,7 +9,7 @@ class ArXivPaper(BaseModel):
     authors: List[str]
     url: str
     categories: List[str]
-    updated_at: str
+    updated_at: datetime
     journal_ref: Optional[str]
     doi: Optional[str]
     license: Optional[str]
