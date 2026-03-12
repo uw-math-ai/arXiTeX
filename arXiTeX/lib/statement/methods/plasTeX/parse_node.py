@@ -28,11 +28,13 @@ def _get_node_ref(node: Node) -> str | None:
     return _strip_nuls(getattr(node.ref, "source", None) if hasattr(node, "ref") else None)
 
 def _get_node_note(node: Node) -> str | None:
-    if hasattr(node, "title"):
-        return _strip_nuls(getattr(node.title, "source", None))
-    elif hasattr(node, "caption"):
-        return _strip_nuls(getattr(node.caption, "source", None))
-
+    attrs = getattr(node, "attributes", None) or {}
+    for key in ("title", "caption", "name", "note"):
+        val = attrs.get(key)
+        if val is not None:
+            src = getattr(val, "source", None)
+            if src:
+                return _strip_nuls(src)
     return None
 
 def parse_node(node: Node) -> Tuple[str | None, str | None, str | None, str]:

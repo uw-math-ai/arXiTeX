@@ -1,31 +1,45 @@
 """
-Main file of theorem module. Provides a helper to parse a paper for theorems.
+Main file of statement module. Provides a helper to parse a paper for statements.
 """
 
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 from tempfile import TemporaryDirectory
-from arXiTeX.types import Theorem, TheoremValidationLevel, ParsingMethod
+from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
-from .validate_theorems import validate_theorems, validate_theorem
+from .validate_statements import validate_statement, validate_statements
 from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
 from .guess_main_file import guess_main_file
-from .extract_theorem_envs import extract_theorem_envs
+from .connect_proofs import connect_proofs
+
+STATEMENT_KINDS = {
+    "theorem", "lemma", "proposition", "corollary",
+    "definition",
+    "axiom", "postulate",
+    "conjecture", "hypothesis",
+    "proof",
+    "remark", "note", "observation",
+    "claim",
+    "fact",
+    "assumption",
+    "notation", "convention"
+}
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
     s3_bundle_key: Optional[str] = None,
     s3_bytes_range: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
+    statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
-    validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper,
+    validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
     timeout : Optional[int] = None
-) -> List[Theorem]:
+) -> List[Statement]:
     """
-    Parses a LaTeX paper (from arXiv or a local file) for theorems. Validates the parsed theorems
-    at a specified level.
+    Parses a LaTeX paper (from arXiv or a local file) for statements. Validates the parsed, filtered
+    statements at a specified level.
 
     Parameters
     ----------
@@ -38,17 +52,19 @@ def parse_paper(
     paper_path : Path | str, optional
         Path to a paper's LaTeX file or a folder of LaTeX files. Either this or arxiv_id must be
         used.
+    statement_kinds : Set[str], optional
+        Set of statement kinds to capture. Default, preset list.
     parsing_method : ParsingMethod, optional
         Method to parse. By default, plasTeX.
-    validation_level : TheoremValidationLevel, optional
-        Level at which to validate theorems. By default, paper-level.
+    validation_level : StatementValidationLevel, optional
+        Level at which to validate statements. By default, paper-level.
     timeout : int, optional
         Maximum number of seconds to attempt parsing. By default, infinity.
     
     Returns
     -------
-    theorems : List[Theorem]
-        Parsed theorems, all checked for validity.
+    statements : List[Statement]
+        Parsed statements, all checked for validity.
     """
 
     if timeout is not None and timeout > 0:
@@ -59,6 +75,7 @@ def parse_paper(
                 s3_bundle_key=s3_bundle_key,
                 s3_bytes_range=s3_bytes_range,
                 paper_path=paper_path,
+                statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
                 validation_level=validation_level,
                 timeout=None,
@@ -82,6 +99,7 @@ def parse_paper(
                 
             return _parse_paper(
                 paper_dir, 
+                statement_kinds=statement_kinds,
                 parsing_method=parsing_method, 
                 validation_level=validation_level
             )
@@ -92,6 +110,7 @@ def parse_paper(
         if paper_path.is_dir():
             return _parse_paper(
                 paper_path,
+                statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
                 validation_level=validation_level
             )
@@ -102,6 +121,7 @@ def parse_paper(
 
                 return _parse_paper(
                     paper_dir, 
+                    statement_kinds=statement_kinds,
                     parsing_method=parsing_method,
                     validation_level=validation_level
                 )
@@ -118,13 +138,13 @@ def parse_paper(
 
 def _parse_paper(
     paper_dir: Path,
+    statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
-    validation_level: TheoremValidationLevel = TheoremValidationLevel.Paper
-) -> List[Theorem]:
+    validation_level: StatementValidationLevel = StatementValidationLevel.Paper
+) -> List[Statement]:
     
     try:
         main_file = guess_main_file(paper_dir)
-        theorem_envs = extract_theorem_envs(paper_dir)
     except Exception as e:
         raise RuntimeError(format_error(
             ParseError.PARSING,
@@ -139,39 +159,51 @@ def _parse_paper(
         error_type = ParseError.REGEX
 
     try:
-        theorems: List[Theorem] = parse(paper_dir, main_file, theorem_envs)
+        statements: List[Statement] = parse(paper_dir, main_file)
     except Exception as e:
         raise RuntimeError(format_error(
             error_type,
             str(e)
         ))
     
-    if len(theorems) == 0:
+    if len(statements) == 0:
         raise RuntimeError(format_error(
             ParseError.EMPTY,
-            "No theorems found"
+            "No environments found"
+        ))
+    
+    statements = [
+        statement.model_copy(update={"kind": sk})
+        for statement in statements
+        if (sk := next((sk for sk in statement_kinds if sk in statement.kind), None)) is not None
+    ]
+
+    if len(statements) == 0:
+        raise RuntimeError(format_error(
+            ParseError.EMPTY,
+            "No statements found"
         ))
 
     match validation_level:
-        case TheoremValidationLevel.Theorem:
-            valid_theorems: List[Theorem] = []
+        case StatementValidationLevel.Statement:
+            valid_statements: List[Statement] = []
 
-            for theorem in theorems:
+            for statement in statements:
                 try:
-                    validate_theorem(theorem)
-                    valid_theorems.append(theorem)
+                    validate_statement(statement)
+                    valid_statements.append(statement)
                 except Exception:
                     pass
 
-            if len(valid_theorems) == 0:
+            if len(valid_statements) == 0:
                 raise ValueError(format_error(
                     ParseError.VALIDATION,
-                    "All theorems are invalid"
+                    "All statements are invalid"
                 ))
 
-            return valid_theorems
+            statements = valid_statements
         
-        case TheoremValidationLevel.Paper:
-            validate_theorems(theorems)
+        case StatementValidationLevel.Paper:
+            validate_statements(statements)
 
-            return theorems
+    return connect_proofs(statements)

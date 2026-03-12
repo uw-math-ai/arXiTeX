@@ -17,47 +17,41 @@ class ArXivPaper(BaseModel):
     citation_count: Optional[int]
     reference_ids: List[str]
 
-class TheoremType(str, Enum):
-    Theorem = "theorem"
-    Lemma = "lemma"
-    Corollary = "corollary"
-    Proposition = "proposition"
-
 class ParsingMethod(str, Enum):
     PLASTEX = "plasTeX"
     REGEX = "regex"
 
-class Theorem(BaseModel):
+class Statement(BaseModel):
     """
-    Theorem object.
+    Statement object.
 
     Attributes
     ----------
-    type : TheoremType
-        The theorem's type
+    kind : str
+        The statement's type
     ref : str
-        The theorem's number (e.g. 1.1 or A.1)
+        The statement's number (e.g. 1.1 or A.1)
     note : str, optional
-        The theorem's note, usually representing a title or caption
+        The statement's note, usually representing a title or caption
     label : str, optional
-        The theorem's label. Used to reference a theorem
+        The statement's label. Used to reference a theorem
     body : str
-        The theorem's raw LaTeX body with simple macros resolved
+        The statement's raw LaTeX body with simple macros resolved
     proof : str, optional
-        The theorem proof's raw LaTeX body with simple macros resolved
+        The statement's proof, if it exists
     """
 
-    type: TheoremType
+    kind: str
     ref: Optional[str] = None
     note: Optional[str] = None
     label: Optional[str] = None
     body: str
-    proof: Optional[str] = None
+    proof: Optional[str]
 
-class TheoremValidationLevel(Enum):
+class StatementValidationLevel(Enum):
     """
-    Level to check if parsed theorems are valid. Supported: Theorem, Paper
+    Level to check if parsed statements are valid. Supported: Statement, Paper
     """
 
-    Theorem = "theorem"
+    Statement = "statement"
     Paper = "paper"

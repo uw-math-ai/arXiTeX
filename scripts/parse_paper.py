@@ -3,9 +3,9 @@ Script for parsing a single paper. Not useful for parsing many papers quickly.
 """
 
 from argparse import ArgumentParser
-from arXiTeX.types import TheoremValidationLevel, Theorem, ParsingMethod
+from arXiTeX.types import StatementValidationLevel, Statement, ParsingMethod
 from typing import List
-from arXiTeX.lib.theorem import parse_paper
+from arXiTeX.lib.statement import parse_paper
 from pathlib import Path
 
 if __name__ == "__main__":
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     arg_parser.add_argument(
         "-v",
         "--validation-level",
-        type=TheoremValidationLevel,
+        type=StatementValidationLevel,
         required=False,
         default="paper",
-        help="Level to validate theorems. Supported: paper (default), theorem"
+        help="Level to validate statements. Supported: paper (default), statement"
     )
 
     arg_parser.add_argument(
@@ -64,14 +64,14 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     try:
-        theorems: List[Theorem] = parse_paper(
+        statements: List[Statement] = parse_paper(
             arxiv_id=args.arxiv_id or None,
             paper_path=args.paper_path or None,
             parsing_method=args.parsing_method,
             validation_level=args.validation_level
         )
 
-        json_out = "\n".join(theorem.model_dump_json() for theorem in theorems)
+        json_out = "\n".join(statement.model_dump_json() for statement in statements)
         out_path = Path(args.output_file)
         
         out_path.write_text(json_out)

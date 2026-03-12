@@ -44,29 +44,7 @@ class Environment(BaseModel):
 # Constants
 ###############################################################################
 
-# Environments emitted with ref=None (unnumbered but semantically relevant).
-# These are implicit amsthm/LaTeX environments not defined via \newtheorem.
-_UNNUMBERED_ENVS: set[str] = {
-    "proof",
-}
 
-# Environments silently dropped — purely visual/structural, never useful for
-# theorem parsing. We still process their \begin tokens so the stack stays
-# consistent, but they never appear in the output.
-_SKIP_ENVS: set[str] = {
-    "document", "filecontents",
-    "verbatim", "Verbatim", "lstlisting", "minted",
-    "tikzpicture", "pgfpicture",
-    "figure", "figure*", "table", "table*",
-    "align", "align*", "aligned",
-    "equation", "equation*", "eqnarray", "eqnarray*",
-    "gather", "gather*", "multline", "multline*",
-    "flalign", "flalign*", "alignat", "alignat*",
-    "enumerate", "itemize", "description",
-    "tabular", "tabular*", "tabularx", "array",
-    "minipage", "adjustbox",
-    "abstract",
-}
 
 # Section hierarchy used for prefix numbering
 _SECTION_LEVELS: list[str] = [
@@ -213,7 +191,7 @@ def _expand_macros(text: str, macros: dict[str, tuple[int, str]]) -> str:
 _NEWTHM_RE = re.compile(
     r"\\newtheorem\s*\{\s*(\w+)\s*\}"          # {env}
     r"\s*(?:\[\s*(\w+)\s*\])?"                 # optional [shared_counter]
-    r"\s*\{[^}]*\}"                            # {Display name} — we don't need this
+    r"\s*\{([^}]*)\}"                          # {Display name}
     r"\s*(?:\[\s*(\w+)\s*\])?"                 # optional [reset_level]
 )
 
@@ -234,37 +212,38 @@ def _parse_theorem_defs(
     """
     Return a dict keyed by env name:
     {
-      "thm":  {"shared": None,    "reset": None},
-      "lem":  {"shared": "thm",   "reset": None},
-      "prop": {"shared": None,    "reset": "section"},
+      "thm":  {"shared": None,    "reset": None,      "display": "Theorem"},
+      "lem":  {"shared": "thm",   "reset": None,      "display": "Lemma"},
+      "prop": {"shared": None,    "reset": "section", "display": "Proposition"},
     }
     All envs that share a counter are normalised so that "shared" always
     points to the *root* name (not a transitive link).
     """
     defs: dict[str, dict] = {}
 
-    # Standard \newtheorem
+    # Standard \newtheorem — groups: 1=env, 2=shared, 3=display, 4=reset
     for m in _NEWTHM_RE.finditer(tex):
-        env, shared, reset = m.group(1), m.group(2), m.group(3)
-        defs[env] = {"shared": shared, "reset": reset}
+        env, shared, display, reset = m.group(1), m.group(2), m.group(3), m.group(4)
+        defs[env] = {"shared": shared, "reset": reset, "display": display.strip()}
 
     # \declaretheorem with options
     for m in _DECLARE_OPT_RE.finditer(tex):
         opts_str, env = m.group(1), m.group(2)
         shared = reset = None
-        sib = re.search(r"(?:sibling|numberlike)\s*=\s*(\w+)", opts_str)
-        nw  = re.search(r"numberwithin\s*=\s*(\w+)", opts_str)
+        sib  = re.search(r"(?:sibling|numberlike)\s*=\s*(\w+)", opts_str)
+        nw   = re.search(r"numberwithin\s*=\s*(\w+)", opts_str)
+        name = re.search(r"name\s*=\s*\{([^}]*)\}", opts_str)
         if sib:
             shared = sib.group(1)
         if nw:
             reset = nw.group(1)
-        defs[env] = {"shared": shared, "reset": reset}
+        defs[env] = {"shared": shared, "reset": reset, "display": name.group(1).strip() if name else env}
 
     # \declaretheorem without options (independent counter)
     for m in _DECLARE_THM_RE.finditer(tex):
         env = m.group(1)
         if env not in defs:
-            defs[env] = {"shared": None, "reset": None}
+            defs[env] = {"shared": None, "reset": None, "display": env}
 
     # Resolve transitive shared pointers to root
     def _root(name: str, visited: set) -> str:
@@ -603,14 +582,6 @@ def log_envs(tex: str) -> list[Environment]:
             open_env, body_start, begin_line, note = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
-            # Three-tier filter:
-            #   _SKIP_ENVS       → drop silently (visual/structural junk)
-            #   thm_defs         → emit with computed ref
-            #   _UNNUMBERED_ENVS → emit with ref=None
-            #   anything else    → emit with ref=None (unknown, retained for safety)
-            if open_env in _SKIP_ENVS:
-                continue
-
             raw_body = clean[body_start:tok_start]
 
             # Extract and remove \label
@@ -624,8 +595,12 @@ def log_envs(tex: str) -> list[Environment]:
             # ref: computed for known theorem envs, None for everything else
             ref = _next_ref(open_env) if open_env in thm_defs else None
 
+            # Normalise env name to its display name if defined
+            # e.g. "cor" -> "corollary", "thm" -> "theorem"
+            env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
+
             results.append(Environment(
-                env        = open_env,
+                env        = env_name,
                 ref        = ref,
                 note       = note,
                 label      = label,
