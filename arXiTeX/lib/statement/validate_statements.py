@@ -56,7 +56,7 @@ def _validate_uniqueness(statements: List[Statement]):
                 f"Multiple statements have the same name: `{name}`"
             ))
 
-        else:
+        elif statement.ref or statement.note:
             names.add(name)
 
 def validate_statement(statement: Statement):
