@@ -23,7 +23,7 @@ Each Environment has:
 
 import re
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 ###############################################################################
@@ -38,6 +38,11 @@ class Environment(BaseModel):
     body:       str
     begin_line: int
     end_line:   int
+
+    @field_validator("env", "ref", "note", "label", "body", mode="before")
+    @classmethod
+    def strip_nul(cls, v: object) -> object:
+        return v.replace("\x00", "") if isinstance(v, str) else v
 
 
 ###############################################################################
