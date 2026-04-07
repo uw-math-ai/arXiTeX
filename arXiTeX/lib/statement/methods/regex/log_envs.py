@@ -200,6 +200,11 @@ _NEWTHM_RE = re.compile(
     r"\s*(?:\[\s*(\w+)\s*\])?"                 # optional [reset_level]
 )
 
+# \newtheorem*{env}{Display}  — unnumbered variant
+_NEWTHM_STAR_RE = re.compile(
+    r"\\newtheorem\*\s*\{\s*(\w+)\s*\}\s*\{([^}]*)\}"
+)
+
 # thmtools: \declaretheorem[options]{env}
 # options we care about: sibling=, numberlike=, numberwithin=
 _DECLARE_THM_RE = re.compile(
@@ -211,25 +216,64 @@ _DECLARE_OPT_RE = re.compile(
     re.DOTALL,
 )
 
+# amsmath: \numberwithin{counter}{section-level}
+_NUMBERWITHIN_RE = re.compile(
+    r"\\numberwithin\s*\{\s*(\w+)\s*\}\s*\{\s*(\w+)\s*\}"
+)
+
+# aliascnt: \newaliascnt{new}{existing}
+# Makes 'new' a counter alias for 'existing' — they share the same value.
+# Typically followed by \newtheorem{new}[new]{...} + \aliascntresetthe{new}.
+_ALIASCNT_RE = re.compile(
+    r"\\newaliascnt\s*\{\s*(\w+)\s*\}\s*\{\s*(\w+)\s*\}"
+)
+
 def _parse_theorem_defs(
     tex: str,
 ) -> dict[str, dict]:
     """
     Return a dict keyed by env name:
     {
-      "thm":  {"shared": None,    "reset": None,      "display": "Theorem"},
-      "lem":  {"shared": "thm",   "reset": None,      "display": "Lemma"},
-      "prop": {"shared": None,    "reset": "section", "display": "Proposition"},
+      "thm":  {"shared": None,    "reset": None,      "display": "Theorem",  "unnumbered": False},
+      "lem":  {"shared": "thm",   "reset": None,      "display": "Lemma",    "unnumbered": False},
+      "prop": {"shared": None,    "reset": "section", "display": "Proposition", "unnumbered": False},
+      "rmk*": {"shared": None,    "reset": None,      "display": "Remark",   "unnumbered": True},
     }
     All envs that share a counter are normalised so that "shared" always
     points to the *root* name (not a transitive link).
     """
     defs: dict[str, dict] = {}
 
+    # Build alias map from \newaliascnt{new}{existing} — must come before
+    # \newtheorem parsing so shared-counter pointers can be resolved through it.
+    # alias_map[new] = existing
+    alias_map: dict[str, str] = {}
+    for m in _ALIASCNT_RE.finditer(tex):
+        alias_map[m.group(1)] = m.group(2)
+
+    def _resolve_alias(name: str, visited: set) -> str:
+        """Follow alias chains to the ultimate target."""
+        if name in visited or name not in alias_map:
+            return name
+        visited.add(name)
+        return _resolve_alias(alias_map[name], visited)
+
     # Standard \newtheorem — groups: 1=env, 2=shared, 3=display, 4=reset
     for m in _NEWTHM_RE.finditer(tex):
         env, shared, display, reset = m.group(1), m.group(2), m.group(3), m.group(4)
-        defs[env] = {"shared": shared, "reset": reset, "display": display.strip()}
+        # If the shared counter is itself an alias, follow the chain.
+        if shared:
+            shared = _resolve_alias(shared, set())
+        # If the env name is an aliascnt alias and no explicit shared counter
+        # was given, treat it as sharing the alias target.
+        elif env in alias_map:
+            shared = _resolve_alias(env, set())
+        defs[env] = {"shared": shared, "reset": reset, "display": display.strip(), "unnumbered": False}
+
+    # \newtheorem* — unnumbered; display name still useful for env normalisation
+    for m in _NEWTHM_STAR_RE.finditer(tex):
+        env, display = m.group(1), m.group(2)
+        defs[env] = {"shared": None, "reset": None, "display": display.strip(), "unnumbered": True}
 
     # \declaretheorem with options
     for m in _DECLARE_OPT_RE.finditer(tex):
@@ -238,17 +282,31 @@ def _parse_theorem_defs(
         sib  = re.search(r"(?:sibling|numberlike)\s*=\s*(\w+)", opts_str)
         nw   = re.search(r"numberwithin\s*=\s*(\w+)", opts_str)
         name = re.search(r"name\s*=\s*\{([^}]*)\}", opts_str)
+        nonum = re.search(r"numbered\s*=\s*no", opts_str)
         if sib:
-            shared = sib.group(1)
+            shared = _resolve_alias(sib.group(1), set())
+        elif env in alias_map:
+            shared = _resolve_alias(env, set())
         if nw:
             reset = nw.group(1)
-        defs[env] = {"shared": shared, "reset": reset, "display": name.group(1).strip() if name else env}
+        defs[env] = {
+            "shared": shared, "reset": reset,
+            "display": name.group(1).strip() if name else env,
+            "unnumbered": bool(nonum),
+        }
 
     # \declaretheorem without options (independent counter)
     for m in _DECLARE_THM_RE.finditer(tex):
         env = m.group(1)
         if env not in defs:
-            defs[env] = {"shared": None, "reset": None, "display": env}
+            shared = _resolve_alias(env, set()) if env in alias_map else None
+            defs[env] = {"shared": shared, "reset": None, "display": env, "unnumbered": False}
+
+    # \numberwithin{counter}{level} — override reset level for any known env
+    for m in _NUMBERWITHIN_RE.finditer(tex):
+        env, level = m.group(1), m.group(2)
+        if env in defs:
+            defs[env]["reset"] = level
 
     # Resolve transitive shared pointers to root
     def _root(name: str, visited: set) -> str:
@@ -340,39 +398,65 @@ def _parse_counter_formats(tex: str) -> dict[str, str]:
 
 
 ###############################################################################
-# Section counter tracker
+# Unified counter bank (mirrors plasTeX's Counter + resetby cascading)
 ###############################################################################
 
 _SECTION_RE = re.compile(
-    r"\\(" + "|".join(_SECTION_LEVELS) + r")\s*(?:\*\s*)?"
-    r"(?:\[[^\]]*\])?\s*\{[^}]*\}"
+    r"\\(" + "|".join(_SECTION_LEVELS) + r")\s*(\*)?"
+    r"(?:\[[^\]]*\])?\s*\{(?:[^{}]|\{[^{}]*\})*\}"
 )
 
-class _SectionTracker:
+# \setcounter{name}{value}  \addtocounter{name}{value}  \stepcounter{name}
+_SETCOUNTER_RE = re.compile(r"\\setcounter\s*\{\s*(\w+)\s*\}\s*\{\s*(-?\d+)\s*\}")
+_ADDTOCOUNTER_RE = re.compile(r"\\addtocounter\s*\{\s*(\w+)\s*\}\s*\{\s*(-?\d+)\s*\}")
+_STEPCOUNTER_RE = re.compile(r"\\(?:step|refstep)counter\s*\{\s*(\w+)\s*\}")
+
+
+class _CounterBank:
+    """
+    Mirrors plasTeX's Counter + Context counter machinery.
+
+    Each counter has a value and an optional resetby parent.  Stepping a
+    counter cascades resets to all (transitive) dependents — exactly as
+    plasTeX's Counter.resetcounters() does.
+    """
+
     def __init__(self) -> None:
-        self._counts: dict[str, int] = {l: 0 for l in _SECTION_LEVELS}
+        self._values:  dict[str, int]           = {}
+        self._resetby: dict[str, Optional[str]] = {}
 
-    def bump(self, level: str) -> None:
-        idx = _SECTION_LEVELS.index(level)
-        self._counts[level] += 1
-        for deeper in _SECTION_LEVELS[idx + 1:]:
-            self._counts[deeper] = 0
+    def declare(self, name: str, resetby: Optional[str] = None, initial: int = 0) -> None:
+        if name not in self._values:
+            self._values[name]  = initial
+            self._resetby[name] = resetby
 
-    def prefix(self, reset_level: Optional[str]) -> str:
-        """
-        Return the prefix string (e.g. "2.1.") implied by *reset_level*.
-        If reset_level is None, return "".
-        """
-        if not reset_level or reset_level not in _SECTION_LEVELS:
-            return ""
-        parts: list[str] = []
-        for level in _SECTION_LEVELS:
-            n = self._counts[level]
-            if n:
-                parts.append(str(n))
-            if level == reset_level:
-                break
-        return ".".join(parts) + "." if parts else ""
+    def step(self, name: str) -> int:
+        if name not in self._values:
+            return 0
+        self._values[name] += 1
+        self._cascade_reset(name)
+        return self._values[name]
+
+    def set(self, name: str, value: int) -> None:
+        self._values[name] = value  # declare implicitly if missing
+        if name not in self._resetby:
+            self._resetby[name] = None
+        self._cascade_reset(name)
+
+    def add(self, name: str, delta: int) -> None:
+        if name not in self._values:
+            return
+        self._values[name] += delta
+        self._cascade_reset(name)
+
+    def get(self, name: str) -> int:
+        return self._values.get(name, 0)
+
+    def _cascade_reset(self, name: str) -> None:
+        for cname, parent in self._resetby.items():
+            if parent == name:
+                self._values[cname] = 0
+                self._cascade_reset(cname)
 
 
 ###############################################################################
@@ -383,7 +467,6 @@ _BEGIN_RE = re.compile(r"\\begin\s*\{\s*(\w+\*?)\s*\}")
 _END_RE   = re.compile(r"\\end\s*\{\s*(\w+\*?)\s*\}")
 
 # Optional note after \begin{env}: \begin{thm}[some note]
-# Note: do NOT use \A here — we always slice the string before matching
 _NOTE_RE  = re.compile(r"^\s*\[([^\]]*)\]")
 
 # \label{key}
@@ -409,7 +492,6 @@ def log_envs(tex: str) -> list[Environment]:
 
     # ── 1. strip comments, build line-start index ─────────────────────────────
     clean  = _strip_comments(tex)
-    # Map char offset → 1-based line number
     line_starts: list[int] = [0]
     for i, ch in enumerate(clean):
         if ch == "\n":
@@ -432,176 +514,162 @@ def log_envs(tex: str) -> list[Environment]:
     thm_defs = _parse_theorem_defs(clean)
 
     # ── 3b. collect counter format overrides (pre-pass) ───────────────────────
-    # e.g. \renewcommand{\thethm}{\Alph{thm}}
     counter_formats = _parse_counter_formats(clean)
 
-    # ── 4. build counter state ────────────────────────────────────────────────
-    # root_counter → {prefix_string → count}
-    root_counts:  dict[str, dict[str, int]] = {}
-    # track last prefix seen per root so we know when to reset
-    root_prefix:  dict[str, str] = {}
+    # ── 4. build unified counter bank ─────────────────────────────────────────
+    bank = _CounterBank()
 
-    section_tracker = _SectionTracker()
+    # Declare section-level counters with cascading resets
+    for i, level in enumerate(_SECTION_LEVELS):
+        parent = _SECTION_LEVELS[i - 1] if i > 0 else None
+        bank.declare(level, resetby=parent)
+
+    # Declare theorem counters.  Only the root counter needs an entry; sharing
+    # envs reuse the root counter directly (no separate declaration needed).
+    for env, info in thm_defs.items():
+        if info.get("unnumbered"):
+            continue
+        root = info["shared"] or env
+        if root == env:  # only declare the root, not sharing aliases
+            bank.declare(env, resetby=info.get("reset"))
 
     def _get_root(env: str) -> Optional[str]:
-        if env not in thm_defs:
-            return None
         info = thm_defs.get(env, {})
-        return info["shared"] if info.get("shared") else env
+        return info["shared"] if info.get("shared") else (env if env in thm_defs else None)
 
-    def _render_format(env: str, root: str, n: int) -> str:
+    # ── 4b. ref rendering (mirrors plasTeX's TheCounter.invoke) ───────────────
+
+    def _eval_format(fmt_body: str, self_name: str) -> str:
         """
-        Render the ref string for *env* with current count *n*, respecting
-        any \renewcommand{\the<env>}{...} override.
-
-        Falls back to plain arabic if no override is found.
-
-        Handles composite formats like \thesection.\arabic{prop} by
-        recursively resolving \the<counter> references using live section
-        counter values.
+        Evaluate a \\the<X> format body, resolving \\the<Y> references
+        recursively and \\arabic{}, \\Alph{} etc. against the live bank.
         """
-        # Look up format body: prefer override on env, then on root
-        fmt_body = counter_formats.get(env) or counter_formats.get(root)
-
-        if not fmt_body:
-            # No override — use the reset-level prefix + arabic by default
-            reset_level = thm_defs.get(root, {}).get("reset") or thm_defs.get(env, {}).get("reset")
-            prefix = section_tracker.prefix(reset_level)
-            return f"{prefix}{n}"
-
         result = fmt_body
 
-        # Replace \the<level> references (e.g. \thesection) with live values
         def _replace_the(m: re.Match) -> str:
-            ref_name = m.group(1)   # e.g. "section"
-            if ref_name in _SECTION_LEVELS:
-                return str(section_tracker._counts.get(ref_name, 0))
-            # Could be another theorem counter — leave as-is for now
-            return m.group(0)
+            ref_name = m.group(1)
+            if ref_name == self_name:
+                return str(bank.get(self_name))
+            return _counter_ref(ref_name)
 
         result = _THE_REF_RE.sub(_replace_the, result)
 
-        # Replace \arabic{x}, \Alph{x}, etc.
         def _replace_fmt(m: re.Match) -> str:
-            fmt_cmd  = m.group(1)   # e.g. "Alph"
-            ctr_name = m.group(2)   # e.g. "thm"
-            # The counter this format applies to — use n if it matches root/env
-            if ctr_name in (env, root):
-                val = n
-            elif ctr_name in _SECTION_LEVELS:
-                val = section_tracker._counts.get(ctr_name, 0)
-            else:
-                val = 0
-            return _apply_format(fmt_cmd, val)
+            fmt_cmd  = m.group(1)
+            ctr_name = m.group(2)
+            return _apply_format(fmt_cmd, bank.get(ctr_name))
 
         result = _FMT_CMD_RE.sub(_replace_fmt, result)
         return result.strip(".")
 
-    def _infer_reset_level(env: str, root: str) -> Optional[str]:
+    def _counter_ref(name: str) -> str:
         """
-        Determine the reset level for this env/root counter by checking:
-          1. Explicit declaration in \newtheorem{...}{...}[level]
-          2. \the<level> reference inside a \renewcommand{\the<env>}{...} body
-        Returns the deepest section level implied, or None.
+        Return the formatted ref string for *name* given the current bank state.
+        Checks \\renewcommand{\\the<name>} first, then falls back to the
+        resetby ancestor chain (mirroring plasTeX's default TheCounter format).
         """
-        explicit = thm_defs.get(root, {}).get("reset") or thm_defs.get(env, {}).get("reset")
-        if explicit:
-            return explicit
-        # Check format body for \the<level> references
-        fmt_body = counter_formats.get(env) or counter_formats.get(root) or ""
-        deepest = None
-        for m in _THE_REF_RE.finditer(fmt_body):
-            ref_name = m.group(1)
-            if ref_name in _SECTION_LEVELS:
-                if deepest is None or _SECTION_LEVELS.index(ref_name) > _SECTION_LEVELS.index(deepest):
-                    deepest = ref_name
-        return deepest
+        fmt_body = counter_formats.get(name)
+        if fmt_body:
+            return _eval_format(fmt_body, name)
+
+        resetby = bank._resetby.get(name)
+        n = bank.get(name)
+        if not resetby:
+            return str(n)
+
+        prefix = _counter_ref(resetby)
+        # Strip leading "0." components (plasTeX trimLeft behaviour for
+        # book/report classes where chapter may be 0)
+        ref = f"{prefix}.{n}" if prefix and not all(p == "0" for p in prefix.split(".")) else str(n)
+        return ref
 
     def _next_ref(env: str) -> Optional[str]:
+        if thm_defs.get(env, {}).get("unnumbered"):
+            return None
         root = _get_root(env)
         if root is None:
             return None
-        reset_level = _infer_reset_level(env, root)
-        prefix = section_tracker.prefix(reset_level)
+        bank.step(root)
+        return _counter_ref(root)
 
-        if root not in root_counts:
-            root_counts[root] = {}
-            root_prefix[root] = prefix
+    # ── 5. collect interleaved events and scan ────────────────────────────────
 
-        # Reset counter when section prefix changes
-        if root_prefix[root] != prefix:
-            root_counts[root] = {}
-            root_prefix[root] = prefix
+    # Section events: (pos, "section", level, is_starred)
+    section_events = [
+        (m.start(), "section", m.group(1), m.group(2) == "*")
+        for m in _SECTION_RE.finditer(clean)
+    ]
 
-        root_counts[root][prefix] = root_counts[root].get(prefix, 0) + 1
-        n = root_counts[root][prefix]
-        return _render_format(env, root, n)
+    # Counter mutation events: (pos, op, name, value_or_0)
+    counter_events: list[tuple[int, str, str, int]] = []
+    for m in _SETCOUNTER_RE.finditer(clean):
+        counter_events.append((m.start(), "set", m.group(1), int(m.group(2))))
+    for m in _ADDTOCOUNTER_RE.finditer(clean):
+        counter_events.append((m.start(), "add", m.group(1), int(m.group(2))))
+    for m in _STEPCOUNTER_RE.finditer(clean):
+        counter_events.append((m.start(), "step", m.group(1), 0))
 
-    # ── 5. linear scan with stack ─────────────────────────────────────────────
-    results:  list[Environment] = []
-    # stack entries: (env_name, body_start_pos, begin_line, note)
-    stack:    list[tuple[str, int, int, Optional[str]]] = []
-    # merge begin/end token stream
+    # Merge and sort all pre-token events by position
+    all_pre_events: list[tuple[int, str, str, int | bool]] = sorted(
+        [(pos, "section", level, starred) for pos, _, level, starred in section_events]
+        + counter_events,
+        key=lambda e: e[0],
+    )
+    pre_idx = 0
+
+    def _flush_pre_events(up_to: int) -> None:
+        nonlocal pre_idx
+        while pre_idx < len(all_pre_events) and all_pre_events[pre_idx][0] < up_to:
+            pos, kind, name, val = all_pre_events[pre_idx]
+            if kind == "section":
+                if not val:  # val is is_starred here
+                    bank.step(name)
+            elif kind == "set":
+                bank.set(name, val)
+            elif kind == "add":
+                bank.add(name, val)
+            elif kind == "step":
+                bank.step(name)
+            pre_idx += 1
+
+    results: list[Environment] = []
+    stack:   list[tuple[str, int, int, Optional[str]]] = []
+
     tokens = sorted(
         [("begin", m.group(1), m.start(), m.end()) for m in _BEGIN_RE.finditer(clean)]
         + [("end",  m.group(1), m.start(), m.end()) for m in _END_RE.finditer(clean)],
         key=lambda t: t[2],
     )
 
-    # We also need section bumps interleaved — collect them
-    section_events = [
-        ("section", m.group(1), m.start())
-        for m in _SECTION_RE.finditer(clean)
-    ]
-    sec_idx = 0
-
     for kind, env, tok_start, tok_end in tokens:
-
-        # Advance section tracker past any sections before this token
-        while sec_idx < len(section_events) and section_events[sec_idx][2] < tok_start:
-            _, sec_level, _ = section_events[sec_idx]
-            section_tracker.bump(sec_level)
-            sec_idx += 1
+        _flush_pre_events(tok_start)
 
         if kind == "begin":
-            # Check for optional note argument immediately after \begin{env}
-            # Slice first — \A / ^ anchors don't work correctly with pos= argument
             after_begin = clean[tok_end:]
             note_match  = _NOTE_RE.match(after_begin)
             note_raw    = note_match.group(1).strip() if note_match else None
             note        = _expand_macros(note_raw, macros) if note_raw else None
-
             body_start  = tok_end + note_match.end() if note_match else tok_end
             stack.append((env, body_start, _lineno(tok_start), note))
 
         elif kind == "end":
-            # Find matching open on stack (search backwards for robustness)
             match_idx = None
             for i in range(len(stack) - 1, -1, -1):
                 if stack[i][0] == env:
                     match_idx = i
                     break
             if match_idx is None:
-                continue  # unmatched \end — skip
+                continue
 
             open_env, body_start, begin_line, note = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
             raw_body = clean[body_start:tok_start]
+            label_m  = _LABEL_RE.search(raw_body)
+            label    = label_m.group(1).strip() if label_m else None
+            body     = _expand_macros(_LABEL_RE.sub("", raw_body).strip(), macros)
 
-            # Extract and remove \label
-            label_m = _LABEL_RE.search(raw_body)
-            label   = label_m.group(1).strip() if label_m else None
-            body    = _LABEL_RE.sub("", raw_body).strip()
-
-            # Expand macros
-            body = _expand_macros(body, macros)
-
-            # ref: computed for known theorem envs, None for everything else
-            ref = _next_ref(open_env) if open_env in thm_defs else None
-
-            # Normalise env name to its display name if defined
-            # e.g. "cor" -> "corollary", "thm" -> "theorem"
+            ref      = _next_ref(open_env) if open_env in thm_defs else None
             env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
 
             results.append(Environment(
