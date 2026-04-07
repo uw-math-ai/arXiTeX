@@ -55,7 +55,7 @@ _STRING_DEF_RE = re.compile(r'@[Ss][Tt][Rr][Ii][Nn][Gg]\s*\{\s*(\w+)\s*=')
 def _build_parser(content: str) -> bibtexparser.bparser.BibTexParser:
     """Return a BibTexParser pre-loaded with common strings plus any bare
     string identifiers found in *content* that aren't already defined."""
-    parser = bibtexparser.bparser.BibTexParser(common_strings=True)
+    parser = bibtexparser.bparser.BibTexParser(common_strings=True, ignore_nonstandard_types=False)
     for k, v in _EXTRA_STRINGS.items():
         if k not in parser.bib_database.strings:
             parser.bib_database.strings[k] = v
