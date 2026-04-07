@@ -32,18 +32,19 @@ def _parse_bibliography(paper_dir: Path, labels: Optional[List[str]]):
             
         try:
             with open(bib_file, "r", encoding="utf-8") as f:
-                bib_database = bibtexparser.load(f)
-            
+                parser = bibtexparser.bparser.BibTexParser(common_strings=True)
+                bib_database = bibtexparser.load(f, parser=parser)
+
             for entry in bib_database.entries:
                 cite_key = entry.get("ID")
                 if not cite_key:
                     continue
                 if labels is not None and cite_key not in labels:
                     continue
-                
+
                 metadata = {
                     "title": entry.get("title", "").strip("{}").strip(),
-                    "arxiv_id": entry.get("arxiv", "").replace("arXiv:", "").strip()
+                    "arxiv_id": (entry.get("eprint") or entry.get("arxiv", "")).replace("arXiv:", "").strip()
                 }
                 
                 metadata = {k: v for k, v in metadata.items() if v}
