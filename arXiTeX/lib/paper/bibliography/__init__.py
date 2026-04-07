@@ -56,7 +56,9 @@ def _build_parser(content: str) -> bibtexparser.bparser.BibTexParser:
     """Return a BibTexParser pre-loaded with common strings plus any bare
     string identifiers found in *content* that aren't already defined."""
     parser = bibtexparser.bparser.BibTexParser(common_strings=True)
-    parser.bib_database.strings.update(_EXTRA_STRINGS)
+    for k, v in _EXTRA_STRINGS.items():
+        if k not in parser.bib_database.strings:
+            parser.bib_database.strings[k] = v
 
     # Collect names already defined (standard abbreviations + file-level @STRINGs)
     defined = {k.lower() for k in parser.bib_database.strings}
