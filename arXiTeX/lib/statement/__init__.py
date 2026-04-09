@@ -30,12 +30,23 @@ STATEMENT_KINDS = {
 
 _DOC_BEGIN_RE = re.compile(r'\\begin\s*\{document\}', re.IGNORECASE)
 
+_PREAMBLE_MAX_CHARS = 16_384
+
 
 def _extract_preamble(tex: str) -> Optional[str]:
     m = _DOC_BEGIN_RE.search(tex)
     if not m:
         return None
-    return tex[:m.start()].strip() or None
+    preamble = tex[:m.start()].strip()
+    if not preamble:
+        return None
+    if len(preamble) > _PREAMBLE_MAX_CHARS:
+        # Cut at the last newline within the limit so we don't split mid-command.
+        cut = preamble.rfind('\n', 0, _PREAMBLE_MAX_CHARS)
+        if cut == -1:
+            cut = _PREAMBLE_MAX_CHARS
+        preamble = preamble[:cut] + '\n% TRUNCATED'
+    return preamble
 
 
 def parse_paper(
