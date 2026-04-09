@@ -205,10 +205,13 @@ def _parse_paper(
             "No environments found"
         ))
 
+    # Always include "proof" internally so connect_proofs can attach them,
+    # regardless of what the caller passed in statement_kinds.
+    internal_kinds = statement_kinds | {"proof"}
     statements = [
         statement.model_copy(update={"kind": sk})
         for statement in statements
-        if (sk := next((sk for sk in statement_kinds if sk in statement.kind), None)) is not None
+        if (sk := next((sk for sk in internal_kinds if sk in statement.kind), None)) is not None
     ]
 
     if len(statements) == 0:
