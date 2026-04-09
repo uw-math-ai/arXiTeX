@@ -64,13 +64,14 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     try:
-        statements: List[Statement] = parse_paper(
+        statements: List[Statement]
+        statements, _ = parse_paper(
             arxiv_id=args.arxiv_id or None,
             paper_path=args.paper_path or None,
             parsing_method=args.parsing_method,
             validation_level=args.validation_level
         )
-
+        
         json_out = "\n".join(statement.model_dump_json() for statement in statements)
         out_path = Path(args.output_file)
         
