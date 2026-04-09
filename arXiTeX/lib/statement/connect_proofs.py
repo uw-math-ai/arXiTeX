@@ -25,16 +25,11 @@ def connect_proofs(statements: List[Statement]):
         if proof.note:
             for m in _REF_RE.finditer(proof.note):
                 content = m.group(1) or m.group(2)
-
-                for label, statement_idx in label_to_idx.items():
-                    if statement_idx == proof_idx:
-                        continue
-
-                    if content.strip() == label:
+                if content:
+                    statement_idx = label_to_idx.get(content.strip())
+                    if statement_idx is not None and statement_idx != proof_idx:
                         statements[statement_idx].proof = proof.body
                         matched = True
-                        break
-
                 break
 
         if not matched:

@@ -2,9 +2,10 @@
 Main file of statement module. Provides a helper to parse a paper for statements.
 """
 
+import re
 import shutil
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 from tempfile import TemporaryDirectory
 from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
@@ -27,6 +28,16 @@ STATEMENT_KINDS = {
     "notation", "convention"
 }
 
+_DOC_BEGIN_RE = re.compile(r'\\begin\s*\{document\}', re.IGNORECASE)
+
+
+def _extract_preamble(tex: str) -> Optional[str]:
+    m = _DOC_BEGIN_RE.search(tex)
+    if not m:
+        return None
+    return tex[:m.start()].strip() or None
+
+
 def parse_paper(
     arxiv_id: Optional[str] = None,
     s3_bundle_key: Optional[str] = None,
@@ -36,7 +47,7 @@ def parse_paper(
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
     timeout : Optional[int] = None
-) -> List[Statement]:
+) -> Tuple[List[Statement], Optional[str]]:
     """
     Parses a LaTeX paper (from arXiv or a local file) for statements. Validates the parsed, filtered
     statements at a specified level.
@@ -60,11 +71,13 @@ def parse_paper(
         Level at which to validate statements. By default, paper-level.
     timeout : int, optional
         Maximum number of seconds to attempt parsing. By default, infinity.
-    
+
     Returns
     -------
     statements : List[Statement]
         Parsed statements, all checked for validity.
+    preamble : str, optional
+        Raw LaTeX preamble (everything before \\begin{document}), or None if not found.
     """
 
     if timeout is not None and timeout > 0:
@@ -96,17 +109,17 @@ def parse_paper(
                     ParseError.DOWNLOAD,
                     str(e)
                 ))
-                
+
             return _parse_paper(
-                paper_dir, 
+                paper_dir,
                 statement_kinds=statement_kinds,
-                parsing_method=parsing_method, 
+                parsing_method=parsing_method,
                 validation_level=validation_level
             )
     elif paper_path is not None:
         if isinstance(paper_path, str):
             paper_path = Path(paper_path)
-        
+
         if paper_path.is_dir():
             return _parse_paper(
                 paper_path,
@@ -120,7 +133,7 @@ def parse_paper(
                 shutil.copy2(paper_path, paper_dir / paper_path.name)
 
                 return _parse_paper(
-                    paper_dir, 
+                    paper_dir,
                     statement_kinds=statement_kinds,
                     parsing_method=parsing_method,
                     validation_level=validation_level
@@ -141,8 +154,8 @@ def _parse_paper(
     statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper
-) -> List[Statement]:
-    
+) -> Tuple[List[Statement], Optional[str]]:
+
     try:
         main_file = guess_main_file(paper_dir)
     except Exception as e:
@@ -150,6 +163,15 @@ def _parse_paper(
             ParseError.PARSING,
             str(e)
         ))
+
+    # Extract preamble from the flattened source, independent of parsing method.
+    preamble = None
+    try:
+        from .methods.regex.flatten import flatten_tex
+        flat = flatten_tex(paper_dir, main_file, ignore_errors=True)
+        preamble = _extract_preamble(flat)
+    except Exception:
+        pass
 
     if parsing_method == ParsingMethod.PLASTEX:
         from .methods.plasTeX import parse
@@ -165,13 +187,13 @@ def _parse_paper(
             error_type,
             str(e)
         ))
-    
+
     if len(statements) == 0:
         raise RuntimeError(format_error(
             ParseError.EMPTY,
             "No environments found"
         ))
-    
+
     statements = [
         statement.model_copy(update={"kind": sk})
         for statement in statements
@@ -202,8 +224,8 @@ def _parse_paper(
                 ))
 
             statements = valid_statements
-        
+
         case StatementValidationLevel.Paper:
             validate_statements(statements)
 
-    return connect_proofs(statements)
+    return connect_proofs(statements), preamble

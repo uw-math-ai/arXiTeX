@@ -76,9 +76,9 @@ def _strip_comments(tex: str) -> str:
 # \newcommand{\name}{body}  or  \newcommand{\name}[n]{body}
 # also matches \renewcommand with the same syntax
 _NEWCMD_RE = re.compile(
-    r"\\(?:re)?newcommand\s*\{\s*(\\[\w@]+)\s*\}"   # \name
-    r"(?:\s*\[\s*(\d)\s*\])?"                        # optional [n]
-    r"\s*\{",                                        # opening { of body
+    r"\\(?:re|provide)?newcommand\s*\*?\s*\{\s*(\\[\w@]+)\s*\}"   # \name
+    r"(?:\s*\[\s*(\d)\s*\])?"                                      # optional [n]
+    r"\s*\{",                                                      # opening { of body
 )
 
 # \def\name{body}  (no-arg form only)
@@ -436,8 +436,8 @@ def _parse_counter_formats(tex: str) -> dict[str, str]:
 ###############################################################################
 
 _SECTION_RE = re.compile(
-    r"\\(" + "|".join(_SECTION_LEVELS) + r")\s*(\*)?"
-    r"(?:\[[^\]]*\])?\s*\{(?:[^{}]|\{[^{}]*\})*\}"
+    r"\\(" + "|".join(_SECTION_LEVELS) + r")\b\s*(\*)?"
+    r"(?:\[[^\]]*\])?\s*\{"
 )
 
 # \setcounter{name}{value}  \addtocounter{name}{value}  \stepcounter{name}
@@ -667,7 +667,7 @@ def log_envs(tex: str) -> list[Environment]:
             pre_idx += 1
 
     results: list[Environment] = []
-    stack:   list[tuple[str, int, int, Optional[str]]] = []
+    stack:   list[tuple[str, int, int, Optional[str], Optional[str]]] = []
 
     tokens = sorted(
         [("begin", m.group(1), m.start(), m.end()) for m in _BEGIN_RE.finditer(clean)]
@@ -682,9 +682,13 @@ def log_envs(tex: str) -> list[Environment]:
             after_begin = clean[tok_end:]
             note_match  = _NOTE_RE.match(after_begin)
             note_raw    = note_match.group(1).strip() if note_match else None
-            note        = _expand_macros(note_raw, macros) if note_raw else None
+            note        = re.sub(r'\s+', ' ', _expand_macros(note_raw, macros)).strip() if note_raw else None
             body_start  = tok_end + note_match.end() if note_match else tok_end
-            stack.append((env, body_start, _lineno(tok_start), note))
+            # Step the counter now (at \begin time), mirroring LaTeX's behaviour.
+            # This ensures any \setcounter / section commands inside the body
+            # don't corrupt the ref that was assigned to this environment.
+            ref         = _next_ref(env) if env in thm_defs else None
+            stack.append((env, body_start, _lineno(tok_start), note, ref))
 
         elif kind == "end":
             match_idx = None
@@ -695,15 +699,14 @@ def log_envs(tex: str) -> list[Environment]:
             if match_idx is None:
                 continue
 
-            open_env, body_start, begin_line, note = stack.pop(match_idx)
+            open_env, body_start, begin_line, note, ref = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
             raw_body = clean[body_start:tok_start]
             label_m  = _LABEL_RE.search(raw_body)
             label    = label_m.group(1).strip() if label_m else None
-            body     = _expand_macros(_LABEL_RE.sub("", raw_body).strip(), macros)
+            body     = re.sub(r'\s+', ' ', _expand_macros(_LABEL_RE.sub("", raw_body), macros)).strip()
 
-            ref      = _next_ref(open_env) if open_env in thm_defs else None
             env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
 
             results.append(Environment(

@@ -18,7 +18,7 @@ def _get_node_body_and_label(node: Node) -> Tuple[str, str | None]:
             getattr(child, "textContent", "")
         )
 
-        body_and_label += tex_src.strip()
+        body_and_label += tex_src
 
     body, label = separate_body_and_label(body_and_label)
 

@@ -2,6 +2,7 @@ import re
 from typing import Tuple
 
 LABEL_RE = re.compile(r"""\\label\s*\{\s*([^{}]+?)\s*\}""")
+_WS_RE = re.compile(r'\s+')
 
 def separate_body_and_label(body_and_label: str) -> Tuple[str, str | None]:
     """
@@ -26,6 +27,6 @@ def separate_body_and_label(body_and_label: str) -> Tuple[str, str | None]:
     if not label:
         label = None
     
-    body = LABEL_RE.sub("", body_and_label, 1).strip()
+    body = _WS_RE.sub(" ", LABEL_RE.sub("", body_and_label, 1)).strip()
 
     return body, label

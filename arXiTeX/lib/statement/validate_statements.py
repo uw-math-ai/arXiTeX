@@ -1,7 +1,10 @@
+import re
 from arXiTeX.types import Statement
 from typing import List
 from .errors import ParseError, format_error
-    
+
+_UNESCAPED_DOLLAR_RE = re.compile(r'(?<!\\)\$')
+
 def _validate_body(statement: Statement):
     body = statement.body
     clean_body = body.lower().strip()
@@ -12,7 +15,7 @@ def _validate_body(statement: Statement):
             f"Statement body is empty"
         ))
 
-    dollar_count = clean_body.count("$")
+    dollar_count = len(_UNESCAPED_DOLLAR_RE.findall(clean_body))
     if dollar_count % 2 == 1:
         raise ValueError(format_error(
             ParseError.VALIDATION,
