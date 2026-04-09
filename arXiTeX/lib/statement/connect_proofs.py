@@ -17,6 +17,9 @@ def connect_proofs(statements: List[Statement]):
     }
 
     for proof_idx, proof, in enumerate(statements):
+        if proof.kind != "proof":
+            continue
+
         matched = False
 
         if proof.note:
