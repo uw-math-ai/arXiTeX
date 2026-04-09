@@ -64,8 +64,10 @@ _SECTION_LEVELS: list[str] = [
 # ── strip comments ────────────────────────────────────────────────────────────
 
 _COMMENT_RE = re.compile(r"(?<!\\)%[^\n]*")
+_COMMENT_ENV_RE = re.compile(r"\\begin\s*\{comment\}.*?\\end\s*\{comment\}", re.DOTALL)
 
 def _strip_comments(tex: str) -> str:
+    tex = _COMMENT_ENV_RE.sub("", tex)
     return _COMMENT_RE.sub("", tex)
 
 
@@ -228,6 +230,9 @@ _ALIASCNT_RE = re.compile(
     r"\\newaliascnt\s*\{\s*(\w+)\s*\}\s*\{\s*(\w+)\s*\}"
 )
 
+# \newenvironment{name} — detects wrapper environments around aliased theorems
+_NEWENV_RE = re.compile(r"\\newenvironment\s*\{\s*(\w+)\s*\}")
+
 def _parse_theorem_defs(
     tex: str,
 ) -> dict[str, dict]:
@@ -258,11 +263,15 @@ def _parse_theorem_defs(
         visited.add(name)
         return _resolve_alias(alias_map[name], visited)
 
+    # Maps env -> raw (pre-resolution) shared counter name, for display name lookup later.
+    raw_shared_map: dict[str, str] = {}
+
     # Standard \newtheorem — groups: 1=env, 2=shared, 3=display, 4=reset
     for m in _NEWTHM_RE.finditer(tex):
         env, shared, display, reset = m.group(1), m.group(2), m.group(3), m.group(4)
         # If the shared counter is itself an alias, follow the chain.
         if shared:
+            raw_shared_map[env] = shared
             shared = _resolve_alias(shared, set())
         # If the env name is an aliascnt alias and no explicit shared counter
         # was given, treat it as sharing the alias target.
@@ -319,6 +328,31 @@ def _parse_theorem_defs(
     for env in list(defs):
         if defs[env]["shared"]:
             defs[env]["shared"] = _root(defs[env]["shared"], set())
+
+    # Handle \newenvironment wrappers around aliased theorem counters.
+    # Pattern: \newaliascnt{X}{Y} + \newenvironment{X}{...} where X is never
+    # declared via \newtheorem directly. X must share Y's counter so that
+    # \begin{X} in source gets properly numbered.
+    newenv_names = {m.group(1) for m in _NEWENV_RE.finditer(tex)}
+    for name, target in alias_map.items():
+        if name in defs or name not in newenv_names:
+            continue
+        root = _resolve_alias(name, set())
+        # Find the \newtheorem whose raw [shared] argument was exactly `name`
+        # (e.g. \newtheorem{examplex}[example]{Example} → raw_shared="example").
+        # This is the pairing convention and avoids matching other envs that
+        # happen to share the same root counter (e.g. lemma).
+        display = name
+        for env, raw_shared in raw_shared_map.items():
+            if raw_shared == name:
+                display = defs[env]["display"]
+                break
+        defs[name] = {
+            "shared": root,
+            "reset": defs.get(root, {}).get("reset"),
+            "display": display,
+            "unnumbered": False,
+        }
 
     return defs
 
