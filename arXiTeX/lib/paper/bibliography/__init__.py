@@ -5,6 +5,70 @@ from typing import List, Optional
 from tempfile import TemporaryDirectory
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
 
+# Extracts the entire thebibliography environment
+_THEBIB_RE = re.compile(
+    r'\\begin\{thebibliography\}.*?\\end\{thebibliography\}',
+    re.DOTALL
+)
+# Matches each \bibitem entry up to the next one or the end of the environment
+_BIBITEM_RE = re.compile(
+    r'\\bibitem(?:\[[^\]]*\])?\{([^}]+)\}(.*?)(?=\\bibitem|\\end\{thebibliography\})',
+    re.DOTALL
+)
+# Matches arXiv IDs in free text (new-style YYMM.NNNNN or old-style area/NNNNNNN)
+_ARXIV_ID_RE = re.compile(
+    r'(?:arXiv:|arxiv\.org/abs/)(\d{4}\.\d{4,5}(?:v\d+)?|[a-z\-]+/\d{7}(?:v\d+)?)',
+    re.IGNORECASE
+)
+
+
+def _strip_latex(text: str) -> str:
+    """Best-effort removal of LaTeX commands, keeping text content."""
+    # \cmd{content} -> content (repeated to handle nesting)
+    for _ in range(4):
+        text = re.sub(r'\\[a-zA-Z]+\*?\{([^{}]*)\}', r'\1', text)
+    text = re.sub(r'\\[a-zA-Z]+\*?', '', text)
+    text = text.replace('{', '').replace('}', '')
+    return ' '.join(text.split()).strip()
+
+
+def _parse_bibitem_from_dir(paper_dir: Path, labels: Optional[List[str]]) -> dict:
+    """Parse \bibitem entries from .tex and .bbl files."""
+    bibliography = {}
+
+    for tex_file in paper_dir.iterdir():
+        if tex_file.suffix not in ('.tex', '.bbl'):
+            continue
+
+        try:
+            content = tex_file.read_text(encoding='utf-8', errors='replace')
+            for env_match in _THEBIB_RE.finditer(content):
+                env = env_match.group(0)
+                for item_match in _BIBITEM_RE.finditer(env):
+                    cite_key = item_match.group(1).strip()
+                    if labels is not None and cite_key not in labels:
+                        continue
+
+                    raw = item_match.group(2)
+                    metadata = {}
+
+                    arxiv_match = _ARXIV_ID_RE.search(raw)
+                    if arxiv_match:
+                        metadata['arxiv_id'] = arxiv_match.group(1)
+
+                    stripped = _strip_latex(raw)
+                    if stripped:
+                        metadata['title'] = stripped[:500]
+
+                    if metadata:
+                        bibliography[cite_key] = metadata
+
+        except Exception as e:
+            print(f"Error parsing {tex_file}: {e}")
+            continue
+
+    return bibliography
+
 # Pre-defined strings to supplement bibtexparser's common_strings.
 # Covers full month names, common publisher/journal abbreviations seen in arXiv .bib files.
 _EXTRA_STRINGS = {
@@ -82,17 +146,17 @@ def parse_bibliography(
     if arxiv_id is not None:
         with TemporaryDirectory() as temp_dir:
             paper_dir = download_arxiv_paper(Path(temp_dir), arxiv_id)
-            return _parse_bibliography(paper_dir, labels=labels)
+            return parse_bibliography_from_dir(paper_dir, labels=labels)
     elif paper_path is not None:
         if isinstance(paper_path, str):
             paper_path = Path(paper_path)
         if paper_path.is_dir():
-            return _parse_bibliography(paper_path, labels=labels)
+            return parse_bibliography_from_dir(paper_path, labels=labels)
         else:
             return {}
 
 
-def _parse_bibliography(paper_dir: Path, labels: Optional[List[str]]):
+def parse_bibliography_from_dir(paper_dir: Path, labels: Optional[List[str]] = None):
     bibliography = {}
 
     for bib_file in paper_dir.iterdir():
@@ -125,4 +189,7 @@ def _parse_bibliography(paper_dir: Path, labels: Optional[List[str]]):
             print(f"Error parsing {bib_file}: {e}")
             continue
 
-    return bibliography
+    if bibliography:
+        return bibliography, True
+
+    return _parse_bibitem_from_dir(paper_dir, labels), False

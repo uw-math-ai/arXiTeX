@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 from enum import Enum
+from dataclasses import dataclass, field
 from datetime import datetime
 
 class ArXivPaper(BaseModel):
@@ -55,3 +56,26 @@ class StatementValidationLevel(Enum):
 
     Statement = "statement"
     Paper = "paper"
+
+
+class ParseFocus(str, Enum):
+    """
+    Which parts of a paper to parse. Supported: all, statements, preamble, bibliography
+    """
+
+    ALL = "all"
+    STATEMENTS = "statements"
+    PREAMBLE = "preamble"
+    BIBLIOGRAPHY = "bibliography"
+
+
+@dataclass
+class ParseResult:
+    """
+    Result of parsing a paper. Fields are None when not requested by the focus.
+    """
+
+    statements: Optional[List[Statement]] = None
+    preamble: Optional[str] = None
+    bibliography: Optional[Dict[str, Dict[str, str]]] = None
+    bibliography_bibtex: Optional[bool] = None

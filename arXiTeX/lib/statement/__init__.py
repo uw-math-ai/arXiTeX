@@ -7,8 +7,9 @@ import shutil
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 from tempfile import TemporaryDirectory
-from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod
+from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod, ParseFocus, ParseResult
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
+from arXiTeX.lib.paper.bibliography import parse_bibliography_from_dir
 from .validate_statements import validate_statement, validate_statements
 from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
@@ -57,11 +58,12 @@ def parse_paper(
     statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
-    timeout : Optional[int] = None
-) -> Tuple[List[Statement], Optional[str]]:
+    timeout: Optional[int] = None,
+    focus: ParseFocus = ParseFocus.ALL,
+) -> ParseResult:
     """
-    Parses a LaTeX paper (from arXiv or a local file) for statements. Validates the parsed, filtered
-    statements at a specified level.
+    Parses a LaTeX paper (from arXiv or a local file). Downloads once and dispatches only the
+    work required by `focus`.
 
     Parameters
     ----------
@@ -82,13 +84,13 @@ def parse_paper(
         Level at which to validate statements. By default, paper-level.
     timeout : int, optional
         Maximum number of seconds to attempt parsing. By default, infinity.
+    focus : ParseFocus, optional
+        Which parts of the paper to parse. By default, all.
 
     Returns
     -------
-    statements : List[Statement]
-        Parsed statements, all checked for validity.
-    preamble : str, optional
-        Raw LaTeX preamble (everything before \\begin{document}), or None if not found.
+    ParseResult
+        Parsed result. Fields not requested by `focus` are None.
     """
 
     if timeout is not None and timeout > 0:
@@ -103,6 +105,7 @@ def parse_paper(
                 parsing_method=parsing_method,
                 validation_level=validation_level,
                 timeout=None,
+                focus=focus,
             )
         return _timed()
 
@@ -125,7 +128,8 @@ def parse_paper(
                 paper_dir,
                 statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
-                validation_level=validation_level
+                validation_level=validation_level,
+                focus=focus,
             )
     elif paper_path is not None:
         if isinstance(paper_path, str):
@@ -136,7 +140,8 @@ def parse_paper(
                 paper_path,
                 statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
-                validation_level=validation_level
+                validation_level=validation_level,
+                focus=focus,
             )
         elif paper_path.is_file():
             with TemporaryDirectory() as temp_dir:
@@ -147,7 +152,8 @@ def parse_paper(
                     paper_dir,
                     statement_kinds=statement_kinds,
                     parsing_method=parsing_method,
-                    validation_level=validation_level
+                    validation_level=validation_level,
+                    focus=focus,
                 )
         else:
             raise FileNotFoundError(format_error(
@@ -164,82 +170,98 @@ def _parse_paper(
     paper_dir: Path,
     statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
-    validation_level: StatementValidationLevel = StatementValidationLevel.Paper
-) -> Tuple[List[Statement], Optional[str]]:
+    validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
+    focus: ParseFocus = ParseFocus.ALL,
+) -> ParseResult:
 
-    try:
-        main_file = guess_main_file(paper_dir)
-    except Exception as e:
-        raise RuntimeError(format_error(
-            ParseError.PARSING,
-            str(e)
-        ))
+    do_statements = focus in (ParseFocus.ALL, ParseFocus.STATEMENTS)
+    do_preamble = focus in (ParseFocus.ALL, ParseFocus.PREAMBLE)
+    do_bibliography = focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
 
-    # Extract preamble from the flattened source, independent of parsing method.
+    statements = None
     preamble = None
-    try:
-        from .methods.regex.flatten import flatten_tex
-        flat = flatten_tex(paper_dir, main_file, ignore_errors=True)
-        preamble = _extract_preamble(flat)
-    except Exception:
-        pass
+    bibliography = None
 
-    if parsing_method == ParsingMethod.PLASTEX:
-        from .methods.plasTeX import parse
-        error_type = ParseError.PLASTEX
-    else:
-        from .methods.regex import parse
-        error_type = ParseError.REGEX
+    if do_preamble or do_statements:
+        try:
+            main_file = guess_main_file(paper_dir)
+        except Exception as e:
+            raise RuntimeError(format_error(
+                ParseError.PARSING,
+                str(e)
+            ))
 
-    try:
-        statements: List[Statement] = parse(paper_dir, main_file)
-    except Exception as e:
-        raise RuntimeError(format_error(
-            error_type,
-            str(e)
-        ))
+    if do_preamble:
+        try:
+            from .methods.regex.flatten import flatten_tex
+            flat = flatten_tex(paper_dir, main_file, ignore_errors=True)
+            preamble = _extract_preamble(flat)
+        except Exception:
+            pass
 
-    if len(statements) == 0:
-        raise RuntimeError(format_error(
-            ParseError.EMPTY,
-            "No environments found"
-        ))
+    if do_statements:
+        if parsing_method == ParsingMethod.PLASTEX:
+            from .methods.plasTeX import parse
+            error_type = ParseError.PLASTEX
+        else:
+            from .methods.regex import parse
+            error_type = ParseError.REGEX
 
-    # Always include "proof" internally so connect_proofs can attach them,
-    # regardless of what the caller passed in statement_kinds.
-    internal_kinds = statement_kinds | {"proof"}
-    statements = [
-        statement.model_copy(update={"kind": sk})
-        for statement in statements
-        if (sk := next((sk for sk in internal_kinds if sk in statement.kind), None)) is not None
-    ]
+        try:
+            raw_statements: List[Statement] = parse(paper_dir, main_file)
+        except Exception as e:
+            raise RuntimeError(format_error(
+                error_type,
+                str(e)
+            ))
 
-    if len(statements) == 0:
-        raise RuntimeError(format_error(
-            ParseError.EMPTY,
-            "No statements found"
-        ))
+        if len(raw_statements) == 0:
+            raise RuntimeError(format_error(
+                ParseError.EMPTY,
+                "No environments found"
+            ))
 
-    match validation_level:
-        case StatementValidationLevel.Statement:
-            valid_statements: List[Statement] = []
+        # Always include "proof" internally so connect_proofs can attach them,
+        # regardless of what the caller passed in statement_kinds.
+        internal_kinds = statement_kinds | {"proof"}
+        raw_statements = [
+            statement.model_copy(update={"kind": sk})
+            for statement in raw_statements
+            if (sk := next((sk for sk in internal_kinds if sk in statement.kind), None)) is not None
+        ]
 
-            for statement in statements:
-                try:
-                    validate_statement(statement)
-                    valid_statements.append(statement)
-                except Exception:
-                    pass
+        if len(raw_statements) == 0:
+            raise RuntimeError(format_error(
+                ParseError.EMPTY,
+                "No statements found"
+            ))
 
-            if len(valid_statements) == 0:
-                raise ValueError(format_error(
-                    ParseError.VALIDATION,
-                    "All statements are invalid"
-                ))
+        match validation_level:
+            case StatementValidationLevel.Statement:
+                valid_statements: List[Statement] = []
 
-            statements = valid_statements
+                for statement in raw_statements:
+                    try:
+                        validate_statement(statement)
+                        valid_statements.append(statement)
+                    except Exception:
+                        pass
 
-        case StatementValidationLevel.Paper:
-            validate_statements(statements)
+                if len(valid_statements) == 0:
+                    raise ValueError(format_error(
+                        ParseError.VALIDATION,
+                        "All statements are invalid"
+                    ))
 
-    return connect_proofs(statements), preamble
+                raw_statements = valid_statements
+
+            case StatementValidationLevel.Paper:
+                validate_statements(raw_statements)
+
+        statements = connect_proofs(raw_statements)
+
+    bibliography_bibtex = None
+    if do_bibliography:
+        bibliography, bibliography_bibtex = parse_bibliography_from_dir(paper_dir)
+
+    return ParseResult(statements=statements, preamble=preamble, bibliography=bibliography, bibliography_bibtex=bibliography_bibtex)
