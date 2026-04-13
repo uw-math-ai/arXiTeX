@@ -222,7 +222,10 @@ def _parse_paper(
             error_type = ParseError.REGEX
 
         try:
-            raw_statements: List[Statement] = parse(paper_dir, main_file, context, flat_tex)
+            raw_statements: List[Statement] = parse(
+                paper_dir, main_file, context, flat_tex,
+                statement_kinds=statement_kinds if parsing_method == ParsingMethod.REGEX else None,
+            )
         except Exception as e:
             raise RuntimeError(format_error(
                 error_type,
