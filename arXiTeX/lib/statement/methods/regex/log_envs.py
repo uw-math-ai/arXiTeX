@@ -32,14 +32,17 @@ from pydantic import BaseModel, field_validator
 
 class Environment(BaseModel):
     env:        str
+    raw_env:    str  # original env name as it appears in \begin{...}, before display-name mapping
     ref:        Optional[str] = None
     note:       Optional[str] = None
     label:      Optional[str] = None
     body:       str
     begin_line: int
     end_line:   int
+    begin_pos:  int  # char offset of \begin{env} in the comment-stripped source
+    end_pos:    int  # char offset just after \end{env} in the comment-stripped source
 
-    @field_validator("env", "ref", "note", "label", "body", mode="before")
+    @field_validator("env", "raw_env", "ref", "note", "label", "body", mode="before")
     @classmethod
     def strip_nul(cls, v: object) -> object:
         return v.replace("\x00", "") if isinstance(v, str) else v
@@ -688,7 +691,7 @@ def log_envs(tex: str) -> list[Environment]:
             # This ensures any \setcounter / section commands inside the body
             # don't corrupt the ref that was assigned to this environment.
             ref         = _next_ref(env) if env in thm_defs else None
-            stack.append((env, body_start, _lineno(tok_start), note, ref))
+            stack.append((env, body_start, _lineno(tok_start), note, ref, tok_start))
 
         elif kind == "end":
             match_idx = None
@@ -699,7 +702,7 @@ def log_envs(tex: str) -> list[Environment]:
             if match_idx is None:
                 continue
 
-            open_env, body_start, begin_line, note, ref = stack.pop(match_idx)
+            open_env, body_start, begin_line, note, ref, begin_pos = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
             raw_body = clean[body_start:tok_start]
@@ -711,12 +714,15 @@ def log_envs(tex: str) -> list[Environment]:
 
             results.append(Environment(
                 env        = env_name,
+                raw_env    = open_env,
                 ref        = ref,
                 note       = note,
                 label      = label,
                 body       = body,
                 begin_line = begin_line,
                 end_line   = end_line,
+                begin_pos  = begin_pos,
+                end_pos    = tok_end,
             ))
 
     return results

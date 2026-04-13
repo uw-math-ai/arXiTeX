@@ -48,6 +48,8 @@ class Statement(BaseModel):
     label: Optional[str] = None
     body: str
     proof: Optional[str]
+    pre_context: Optional[str] = None
+    post_context: Optional[str] = None
 
 class StatementValidationLevel(Enum):
     """

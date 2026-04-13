@@ -60,6 +60,7 @@ def parse_paper(
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
     timeout: Optional[int] = None,
     focus: ParseFocus = ParseFocus.ALL,
+    context: int = 0
 ) -> ParseResult:
     """
     Parses a LaTeX paper (from arXiv or a local file). Downloads once and dispatches only the
@@ -86,6 +87,8 @@ def parse_paper(
         Maximum number of seconds to attempt parsing. By default, infinity.
     focus : ParseFocus, optional
         Which parts of the paper to parse. By default, all.
+    context : int, optional
+        How many characters to grab before and after statement. By default, none.
 
     Returns
     -------
@@ -106,6 +109,7 @@ def parse_paper(
                 validation_level=validation_level,
                 timeout=None,
                 focus=focus,
+                context=context,
             )
         return _timed()
 
@@ -130,6 +134,7 @@ def parse_paper(
                 parsing_method=parsing_method,
                 validation_level=validation_level,
                 focus=focus,
+                context=context
             )
     elif paper_path is not None:
         if isinstance(paper_path, str):
@@ -142,6 +147,7 @@ def parse_paper(
                 parsing_method=parsing_method,
                 validation_level=validation_level,
                 focus=focus,
+                context=context
             )
         elif paper_path.is_file():
             with TemporaryDirectory() as temp_dir:
@@ -154,6 +160,7 @@ def parse_paper(
                     parsing_method=parsing_method,
                     validation_level=validation_level,
                     focus=focus,
+                    context=context
                 )
         else:
             raise FileNotFoundError(format_error(
@@ -172,6 +179,7 @@ def _parse_paper(
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
     focus: ParseFocus = ParseFocus.ALL,
+    context: int = 0
 ) -> ParseResult:
 
     do_statements = focus in (ParseFocus.ALL, ParseFocus.STATEMENTS)
@@ -191,13 +199,19 @@ def _parse_paper(
                 str(e)
             ))
 
-    if do_preamble:
+    # Pre-compute flat_tex once when needed for preamble or context extraction,
+    # so neither path calls flatten_tex a second time inside the timeout window.
+    flat_tex = None
+    if do_preamble or (do_statements and context > 0):
         try:
             from .methods.regex.flatten import flatten_tex
-            flat = flatten_tex(paper_dir, main_file, ignore_errors=True)
-            preamble = _extract_preamble(flat)
+            flat_tex = flatten_tex(paper_dir, main_file, ignore_errors=True)
         except Exception:
             pass
+
+    if do_preamble:
+        if flat_tex is not None:
+            preamble = _extract_preamble(flat_tex)
 
     if do_statements:
         if parsing_method == ParsingMethod.PLASTEX:
@@ -208,7 +222,7 @@ def _parse_paper(
             error_type = ParseError.REGEX
 
         try:
-            raw_statements: List[Statement] = parse(paper_dir, main_file)
+            raw_statements: List[Statement] = parse(paper_dir, main_file, context, flat_tex)
         except Exception as e:
             raise RuntimeError(format_error(
                 error_type,
