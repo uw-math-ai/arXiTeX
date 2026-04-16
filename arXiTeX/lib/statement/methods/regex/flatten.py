@@ -64,6 +64,10 @@ _DIRECTIVE_RE = re.compile(
     r"([^\s%{}\\]+)",         # filename ends at whitespace / comment / brace
 )
 
+_USEPACKAGE_RE = re.compile(
+    r"\\usepackage\s*(?:\[[^\]]*\])?\s*\{([^}]+)\}"  # \usepackage[opts]{name(s)}
+)
+
 _COMMENT_RE = re.compile(r"(?<!\\)%.*$")  # strip from % that isn't \%
 
 
@@ -133,7 +137,19 @@ def _expand(
         m = _DIRECTIVE_RE.search(stripped)
 
         if m is None:
-            out.append(line)
+            # Check for \usepackage with a local .sty file
+            pkg_match = _USEPACKAGE_RE.search(stripped)
+            inlined = False
+            if pkg_match:
+                for pkg_name in pkg_match.group(1).split(","):
+                    pkg_name = pkg_name.strip()
+                    for candidate in [resolved.parent / f"{pkg_name}.sty", folder / f"{pkg_name}.sty"]:
+                        if candidate.is_file() and candidate.resolve() not in seen:
+                            out.append(_expand(candidate, folder, encoding, ignore_errors, seen))
+                            inlined = True
+                            break
+            if not inlined:
+                out.append(line)
             continue
 
         # Extract command and filename from whichever alternative matched
