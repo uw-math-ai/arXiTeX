@@ -32,6 +32,40 @@ def _strip_latex(text: str) -> str:
     return ' '.join(text.split()).strip()
 
 
+_AMSBIB_ENTRY_RE = re.compile(
+    r'\\bib\{([^}]+)\}\{[^}]+\}\{(.*?)\n\}',
+    re.DOTALL
+)
+_AMSBIB_FIELD_RE = re.compile(
+    r'^\s*(\w+)\s*=\s*\{((?:[^{}]|\{[^{}]*\})*)\}',
+    re.MULTILINE
+)
+
+def _parse_amsrefs_content(content: str, labels: Optional[List[str]]) -> dict:
+    """Parse amsrefs-format files (\\bib{key}{type}{...} blocks)."""
+    bibliography = {}
+    for m in _AMSBIB_ENTRY_RE.finditer(content):
+        cite_key = m.group(1).strip()
+        if labels is not None and cite_key not in labels:
+            continue
+        body = m.group(2)
+        metadata = {}
+
+        fields = {f.group(1): f.group(2) for f in _AMSBIB_FIELD_RE.finditer(body)}
+        title = fields.get("title") or fields.get("booktitle")
+        if title:
+            metadata["title"] = _strip_latex(title)
+
+        arxiv_match = _ARXIV_ID_RE.search(body)
+        if arxiv_match:
+            metadata["arxiv_id"] = arxiv_match.group(1)
+
+        if metadata:
+            bibliography[cite_key] = metadata
+
+    return bibliography
+
+
 _BIBLATEX_ENTRY_RE = re.compile(
     r'\\entry\{([^}]+)\}\{[^}]*\}\{[^}]*\}(.*?)\\endentry',
     re.DOTALL
@@ -241,6 +275,19 @@ def parse_bibliography_from_dir(paper_dir: Path, labels: Optional[List[str]] = N
                     bibliography.update(bbl_bib)
         except Exception as e:
             print(f"Error parsing {bbl_file}: {e}")
+
+    # Try amsrefs format (\bib{key}{type}{...} blocks) in .bbl files
+    for amsrefs_file in paper_dir.iterdir():
+        if amsrefs_file.suffix != '.bbl':
+            continue
+        try:
+            content = amsrefs_file.read_text(encoding="utf-8", errors="replace")
+            if r'\bib{' in content:
+                amsrefs_bib = _parse_amsrefs_content(content, labels)
+                if amsrefs_bib:
+                    bibliography.update(amsrefs_bib)
+        except Exception as e:
+            print(f"Error parsing {amsrefs_file}: {e}")
 
     if bibliography:
         return bibliography, False
