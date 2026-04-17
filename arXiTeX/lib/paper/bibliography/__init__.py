@@ -32,6 +32,43 @@ def _strip_latex(text: str) -> str:
     return ' '.join(text.split()).strip()
 
 
+_BIBLATEX_ENTRY_RE = re.compile(
+    r'\\entry\{([^}]+)\}\{[^}]*\}\{[^}]*\}(.*?)\\endentry',
+    re.DOTALL
+)
+_BIBLATEX_FIELD_RE = re.compile(r'\\field\{(\w+)\}\{([^}]*)\}')
+
+def _parse_biblatex_bbl(content: str, labels: Optional[List[str]]) -> dict:
+    """Parse biblatex-format .bbl files (\\entry...\\endentry blocks)."""
+    bibliography = {}
+    for m in _BIBLATEX_ENTRY_RE.finditer(content):
+        cite_key = m.group(1).strip()
+        if labels is not None and cite_key not in labels:
+            continue
+
+        body = m.group(2)
+        metadata = {}
+
+        fields = {f.group(1): f.group(2) for f in _BIBLATEX_FIELD_RE.finditer(body)}
+        title = fields.get("title") or fields.get("booktitle")
+        if title:
+            metadata["title"] = _strip_latex(title)
+
+        eprint = fields.get("eprint", "")
+        eprinttype = fields.get("eprinttype", "")
+        if eprint and "arxiv" in eprinttype.lower():
+            metadata["arxiv_id"] = eprint.strip()
+        elif not eprint:
+            arxiv_match = _ARXIV_ID_RE.search(body)
+            if arxiv_match:
+                metadata["arxiv_id"] = arxiv_match.group(1)
+
+        if metadata:
+            bibliography[cite_key] = metadata
+
+    return bibliography
+
+
 def _parse_bibitem_from_dir(paper_dir: Path, labels: Optional[List[str]]) -> dict:
     """Parse \bibitem entries from .tex and .bbl files."""
     bibliography = {}
@@ -191,5 +228,21 @@ def parse_bibliography_from_dir(paper_dir: Path, labels: Optional[List[str]] = N
 
     if bibliography:
         return bibliography, True
+
+    # Try biblatex .bbl format (\entry...\endentry blocks)
+    for bbl_file in paper_dir.iterdir():
+        if bbl_file.suffix != ".bbl":
+            continue
+        try:
+            content = bbl_file.read_text(encoding="utf-8", errors="replace")
+            if r"\entry{" in content:
+                bbl_bib = _parse_biblatex_bbl(content, labels)
+                if bbl_bib:
+                    bibliography.update(bbl_bib)
+        except Exception as e:
+            print(f"Error parsing {bbl_file}: {e}")
+
+    if bibliography:
+        return bibliography, False
 
     return _parse_bibitem_from_dir(paper_dir, labels), False
