@@ -52,8 +52,6 @@ def _extract_preamble(tex: str) -> Optional[str]:
 
 def parse_paper(
     arxiv_id: Optional[str] = None,
-    s3_bundle_key: Optional[str] = None,
-    s3_bytes_range: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
     statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
@@ -70,10 +68,6 @@ def parse_paper(
     ----------
     arxiv_id : str, optional
         arXiv id of a paper. Either this or paper_path must be used.
-    s3_bundle_key: str, optional
-        Bundle key of paper in arXiv's S3 bucket. Default, None.
-    s3_bytes_range: str, optional
-        Bytes range of paper in arXiv's S3 bucket. Default, None.
     paper_path : Path | str, optional
         Path to a paper's LaTeX file or a folder of LaTeX files. Either this or arxiv_id must be
         used.
@@ -88,7 +82,8 @@ def parse_paper(
     focus : ParseFocus, optional
         Which parts of the paper to parse. By default, all.
     context : int, optional
-        How many characters to grab before and after statement. By default, none.
+        How many characters to grab before and after each statement. Only supported with
+        ``ParsingMethod.REGEX``; ignored when using ``ParsingMethod.PLASTEX``. By default, none.
 
     Returns
     -------
@@ -101,8 +96,6 @@ def parse_paper(
         def _timed():
             return parse_paper(
                 arxiv_id=arxiv_id,
-                s3_bundle_key=s3_bundle_key,
-                s3_bytes_range=s3_bytes_range,
                 paper_path=paper_path,
                 statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
@@ -119,8 +112,6 @@ def parse_paper(
                 paper_dir = download_arxiv_paper(
                     cwd=Path(temp_dir),
                     arxiv_id=arxiv_id,
-                    s3_bundle_key=s3_bundle_key,
-                    s3_bytes_range=s3_bytes_range
                 )
             except Exception as e:
                 raise RuntimeError(format_error(

@@ -16,7 +16,6 @@ authors = [
 
 dependencies = [
   "plasTeX @ git+https://github.com/plastex/plastex.git",
-  "boto3",
   "requests",
   "kaggle",
   "pydantic",
