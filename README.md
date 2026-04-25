@@ -1,4 +1,4 @@
-![arXiTeX](images/logo.svg)
+![arXiTeX](images/logo.png)
 
 A Python library for parsing arXiv papers.
 
