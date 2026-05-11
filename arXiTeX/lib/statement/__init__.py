@@ -9,6 +9,7 @@ from typing import List, Optional, Set, Tuple
 from tempfile import TemporaryDirectory
 from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod, ParseFocus, ParseResult
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
+from arXiTeX.lib.utils.download_s3_paper import download_s3_paper
 from arXiTeX.lib.paper.bibliography import parse_bibliography_from_dir
 from .validate_statements import validate_statement, validate_statements
 from .run_with_timeout import run_with_timeout
@@ -53,6 +54,7 @@ def _extract_preamble(tex: str) -> Optional[str]:
 def parse_paper(
     arxiv_id: Optional[str] = None,
     paper_path: Optional[Path | str] = None,
+    s3_uri: Optional[str] = None,
     statement_kinds: Set[str] = STATEMENT_KINDS,
     parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
     validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
@@ -61,16 +63,17 @@ def parse_paper(
     context: int = 0
 ) -> ParseResult:
     """
-    Parses a LaTeX paper (from arXiv or a local file). Downloads once and dispatches only the
+    Parses a LaTeX paper (from arXiv, S3, or a local file). Downloads once and dispatches only the
     work required by `focus`.
 
     Parameters
     ----------
     arxiv_id : str, optional
-        arXiv id of a paper. Either this or paper_path must be used.
+        arXiv id of a paper. Exactly one of arxiv_id, paper_path, s3_uri must be used.
     paper_path : Path | str, optional
-        Path to a paper's LaTeX file or a folder of LaTeX files. Either this or arxiv_id must be
-        used.
+        Path to a paper's LaTeX file or a folder of LaTeX files.
+    s3_uri : str, optional
+        S3 URI of a gzipped tarball of a paper's LaTeX source folder.
     statement_kinds : Set[str], optional
         Set of statement kinds to capture. Default, preset list.
     parsing_method : ParsingMethod, optional
@@ -97,6 +100,7 @@ def parse_paper(
             return parse_paper(
                 arxiv_id=arxiv_id,
                 paper_path=paper_path,
+                s3_uri=s3_uri,
                 statement_kinds=statement_kinds,
                 parsing_method=parsing_method,
                 validation_level=validation_level,
@@ -106,12 +110,39 @@ def parse_paper(
             )
         return _timed()
 
+    if sum(arg is not None for arg in (arxiv_id, paper_path, s3_uri)) != 1:
+        raise ValueError(format_error(
+            ParseError.SYNTAX,
+            "Exactly one of arxiv_id, paper_path, s3_uri must be provided"
+        ))
+
     if arxiv_id is not None:
         with TemporaryDirectory() as temp_dir:
             try:
                 paper_dir = download_arxiv_paper(
                     cwd=Path(temp_dir),
                     arxiv_id=arxiv_id,
+                )
+            except Exception as e:
+                raise RuntimeError(format_error(
+                    ParseError.DOWNLOAD,
+                    str(e)
+                ))
+
+            return _parse_paper(
+                paper_dir,
+                statement_kinds=statement_kinds,
+                parsing_method=parsing_method,
+                validation_level=validation_level,
+                focus=focus,
+                context=context
+            )
+    elif s3_uri is not None:
+        with TemporaryDirectory() as temp_dir:
+            try:
+                paper_dir = download_s3_paper(
+                    cwd=Path(temp_dir),
+                    s3_uri=s3_uri,
                 )
             except Exception as e:
                 raise RuntimeError(format_error(
