@@ -6,8 +6,9 @@ class ParseError(Enum):
     SYNTAX = "SYNTAX"
     DOWNLOAD = "DOWNLOAD"
     PARSING = "PARSING"
-    PLASTEX = "PLASTEX"
     REGEX = "REGEX"
+    TEX = "TEX"
+    LLM = "LLM"
     VALIDATION = "VALIDATION"
     EMPTY = "EMPTY"
 

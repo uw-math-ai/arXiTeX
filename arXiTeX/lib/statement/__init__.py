@@ -1,16 +1,29 @@
 """
-Main file of statement module. Provides a helper to parse a paper for statements.
+The ``Parser`` — arXiTeX's single entry point for turning a paper into
+structured statements, preamble, and bibliography.
+
+A ``Parser`` bundles *how* to parse (method(s), kinds, focus, validation, ...)
+so it can be configured once and reused across many papers. Call
+:meth:`Parser.parse` with a source (arXiv id, local path, or ``s3://`` URI).
 """
 
 import re
 import shutil
+from contextlib import contextmanager
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
 from tempfile import TemporaryDirectory
-from arXiTeX.types import Statement, StatementValidationLevel, ParsingMethod, ParseFocus, ParseResult
+from typing import Iterator, List, Optional, Set, Tuple
+
+from arXiTeX.types import (
+    Statement,
+    ValidationLevel,
+    ParseFocus,
+    ParseResult,
+)
 from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
 from arXiTeX.lib.utils.download_s3_paper import download_s3_paper
 from arXiTeX.lib.paper.bibliography import parse_bibliography_from_dir
+from .methods import Method, ParseContext, resolve_methods, MethodSpec
 from .validate_statements import validate_statement, validate_statements
 from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
@@ -27,280 +40,307 @@ STATEMENT_KINDS = {
     "claim",
     "fact",
     "assumption",
-    "notation", "convention"
+    "notation", "convention",
 }
 
-_DOC_BEGIN_RE = re.compile(r'\\begin\s*\{document\}', re.IGNORECASE)
+#: Default method chain: real TeX engine, falling back to regex if it is
+#: unavailable (no tectonic/pdflatex) or fails to produce statements.
+DEFAULT_METHOD: Tuple[str, ...] = ("tex", "regex")
 
+_DOC_BEGIN_RE = re.compile(r"\\begin\s*\{document\}", re.IGNORECASE)
 _PREAMBLE_MAX_CHARS = 16_384
+
+# new-style (2107.12345) or old-style (math.AG/0601001) arXiv ids, optional version
+_ARXIV_ID_RE = re.compile(
+    r"^(?:\d{4}\.\d{4,5}|[a-z\-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?$",
+    re.IGNORECASE,
+)
 
 
 def _extract_preamble(tex: str) -> Optional[str]:
     m = _DOC_BEGIN_RE.search(tex)
     if not m:
         return None
-    preamble = tex[:m.start()].strip()
+    preamble = tex[: m.start()].strip()
     if not preamble:
         return None
     if len(preamble) > _PREAMBLE_MAX_CHARS:
-        # Cut at the last newline within the limit so we don't split mid-command.
-        cut = preamble.rfind('\n', 0, _PREAMBLE_MAX_CHARS)
+        cut = preamble.rfind("\n", 0, _PREAMBLE_MAX_CHARS)
         if cut == -1:
             cut = _PREAMBLE_MAX_CHARS
-        preamble = preamble[:cut] + '\n% TRUNCATED'
+        preamble = preamble[:cut] + "\n% TRUNCATED"
     return preamble
 
 
-def parse_paper(
-    arxiv_id: Optional[str] = None,
-    paper_path: Optional[Path | str] = None,
-    s3_uri: Optional[str] = None,
-    statement_kinds: Set[str] = STATEMENT_KINDS,
-    parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
-    validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
-    timeout: Optional[int] = None,
-    focus: ParseFocus = ParseFocus.ALL,
-    context: int = 0
-) -> ParseResult:
-    """
-    Parses a LaTeX paper (from arXiv, S3, or a local file). Downloads once and dispatches only the
-    work required by `focus`.
+class Parser:
+    """Configurable parser for arXiv/LaTeX papers.
 
     Parameters
     ----------
-    arxiv_id : str, optional
-        arXiv id of a paper. Exactly one of arxiv_id, paper_path, s3_uri must be used.
-    paper_path : Path | str, optional
-        Path to a paper's LaTeX file or a folder of LaTeX files.
-    s3_uri : str, optional
-        S3 URI of a gzipped tarball of a paper's LaTeX source folder.
-    statement_kinds : Set[str], optional
-        Set of statement kinds to capture. Default, preset list.
-    parsing_method : ParsingMethod, optional
-        Method to parse. By default, plasTeX.
-    validation_level : StatementValidationLevel, optional
-        Level at which to validate statements. By default, paper-level.
-    timeout : int, optional
-        Maximum number of seconds to attempt parsing. By default, infinity.
-    focus : ParseFocus, optional
-        Which parts of the paper to parse. By default, all.
+    method : str | Method | list, optional
+        Which parsing method(s) to use: ``"regex"``, ``"tex"``, ``"llm"``, a
+        configured instance (e.g. ``Tex(engine="pdflatex")``), or a list of these
+        forming a fallback chain (each is tried until one yields statements).
+        Defaults to ``("tex", "regex")``.
+    kinds : set of str, optional
+        Statement kinds to keep. Defaults to a broad preset (:data:`STATEMENT_KINDS`).
+    focus : ParseFocus | str, optional
+        Which parts of the paper to populate (``"all"``, ``"statements"``,
+        ``"preamble"``, ``"bibliography"``). Defaults to ``"all"``.
+    validation : ValidationLevel | str, optional
+        How strictly to validate statements (``"paper"``, ``"statement"``,
+        ``"none"``). Defaults to ``"paper"``.
     context : int, optional
-        How many characters to grab before and after each statement. Only supported with
-        ``ParsingMethod.REGEX``; ignored when using ``ParsingMethod.PLASTEX``. By default, none.
-
-    Returns
-    -------
-    ParseResult
-        Parsed result. Fields not requested by `focus` are None.
+        Characters of surrounding text to capture around each statement. Only the
+        ``regex`` method supports this; a non-zero value with any other method
+        raises. Defaults to ``0``.
+    timeout : int, optional
+        Maximum seconds for a single ``parse`` call. Defaults to no limit.
     """
 
-    if timeout is not None and timeout > 0:
-        @run_with_timeout(seconds=timeout)
-        def _timed():
-            return parse_paper(
-                arxiv_id=arxiv_id,
-                paper_path=paper_path,
-                s3_uri=s3_uri,
-                statement_kinds=statement_kinds,
-                parsing_method=parsing_method,
-                validation_level=validation_level,
-                timeout=None,
-                focus=focus,
-                context=context,
-            )
-        return _timed()
+    def __init__(
+        self,
+        method: MethodSpec = DEFAULT_METHOD,
+        kinds: Set[str] = STATEMENT_KINDS,
+        focus: "ParseFocus | str" = ParseFocus.ALL,
+        validation: "ValidationLevel | str" = ValidationLevel.PAPER,
+        context: int = 0,
+        timeout: Optional[int] = None,
+    ):
+        self.methods: List[Method] = resolve_methods(method)
+        self.kinds: Set[str] = set(kinds)
+        self.focus = ParseFocus(focus)
+        self.validation = ValidationLevel(validation)
+        self.context = context
+        self.timeout = timeout
 
-    if sum(arg is not None for arg in (arxiv_id, paper_path, s3_uri)) != 1:
-        raise ValueError(format_error(
-            ParseError.SYNTAX,
-            "Exactly one of arxiv_id, paper_path, s3_uri must be provided"
-        ))
-
-    if arxiv_id is not None:
-        with TemporaryDirectory() as temp_dir:
-            try:
-                paper_dir = download_arxiv_paper(
-                    cwd=Path(temp_dir),
-                    arxiv_id=arxiv_id,
+        if context > 0:
+            unsupported = [m.name for m in self.methods if not m.supports_context]
+            if unsupported:
+                raise ValueError(
+                    f"context={context} is only supported by the 'regex' method; "
+                    f"these methods do not support it: {', '.join(unsupported)}."
                 )
-            except Exception as e:
-                raise RuntimeError(format_error(
-                    ParseError.DOWNLOAD,
-                    str(e)
+
+    # ---- public API ------------------------------------------------------
+
+    def parse(
+        self,
+        source: Optional[str] = None,
+        *,
+        arxiv_id: Optional[str] = None,
+        path: "str | Path | None" = None,
+        s3_uri: Optional[str] = None,
+    ) -> ParseResult:
+        """Parse a paper.
+
+        Provide the source either positionally (auto-detected) or via exactly one
+        keyword. Auto-detection: ``s3://...`` → S3, an existing path → local file
+        or directory, otherwise an arXiv id.
+
+        Examples
+        --------
+        >>> parser.parse("2109.06451")           # arXiv id
+        >>> parser.parse("path/to/paper/")        # local directory
+        >>> parser.parse(s3_uri="s3://bucket/p.tar.gz")
+        """
+        kind, value = self._resolve_source(source, arxiv_id, path, s3_uri)
+        return run_with_timeout(self.timeout, self._parse_resolved, kind, value)
+
+    # ---- source handling -------------------------------------------------
+
+    def _resolve_source(
+        self,
+        source: Optional[str],
+        arxiv_id: Optional[str],
+        path: "str | Path | None",
+        s3_uri: Optional[str],
+    ) -> Tuple[str, str]:
+        explicit = [
+            ("arxiv_id", arxiv_id),
+            ("path", path),
+            ("s3_uri", s3_uri),
+        ]
+        given = [(k, v) for k, v in explicit if v is not None]
+
+        if source is not None:
+            if given:
+                raise ValueError(
+                    "Pass the source positionally OR as a keyword, not both."
+                )
+            return self._detect_source(source)
+
+        if len(given) != 1:
+            raise ValueError(
+                "Provide exactly one source: a positional argument, or one of "
+                "arxiv_id / path / s3_uri."
+            )
+        return given[0]
+
+    @staticmethod
+    def _detect_source(source: "str | Path") -> Tuple[str, str]:
+        s = str(source)
+        if s.startswith("s3://"):
+            return ("s3_uri", s)
+        if Path(source).exists():
+            return ("path", s)
+        if _ARXIV_ID_RE.match(s):
+            return ("arxiv_id", s)
+        raise ValueError(
+            f"Could not interpret source {source!r} as an arXiv id, existing "
+            f"path, or s3:// URI."
+        )
+
+    @contextmanager
+    def _materialize(self, kind: str, value: str) -> Iterator[Path]:
+        """Yield a directory containing the paper's source files."""
+        if kind == "arxiv_id":
+            with TemporaryDirectory() as tmp:
+                try:
+                    paper_dir = download_arxiv_paper(cwd=Path(tmp), arxiv_id=value)
+                except Exception as e:
+                    raise RuntimeError(format_error(ParseError.DOWNLOAD, str(e)))
+                yield paper_dir
+        elif kind == "s3_uri":
+            with TemporaryDirectory() as tmp:
+                try:
+                    paper_dir = download_s3_paper(cwd=Path(tmp), s3_uri=value)
+                except Exception as e:
+                    raise RuntimeError(format_error(ParseError.DOWNLOAD, str(e)))
+                yield paper_dir
+        elif kind == "path":
+            p = Path(value)
+            if p.is_dir():
+                yield p
+            elif p.is_file():
+                with TemporaryDirectory() as tmp:
+                    dest = Path(tmp) / p.name
+                    shutil.copy2(p, dest)
+                    yield Path(tmp)
+            else:
+                raise FileNotFoundError(format_error(
+                    ParseError.DOWNLOAD, f"Path not found: {value}"
                 ))
-
-            return _parse_paper(
-                paper_dir,
-                statement_kinds=statement_kinds,
-                parsing_method=parsing_method,
-                validation_level=validation_level,
-                focus=focus,
-                context=context
-            )
-    elif s3_uri is not None:
-        with TemporaryDirectory() as temp_dir:
-            try:
-                paper_dir = download_s3_paper(
-                    cwd=Path(temp_dir),
-                    s3_uri=s3_uri,
-                )
-            except Exception as e:
-                raise RuntimeError(format_error(
-                    ParseError.DOWNLOAD,
-                    str(e)
-                ))
-
-            return _parse_paper(
-                paper_dir,
-                statement_kinds=statement_kinds,
-                parsing_method=parsing_method,
-                validation_level=validation_level,
-                focus=focus,
-                context=context
-            )
-    elif paper_path is not None:
-        if isinstance(paper_path, str):
-            paper_path = Path(paper_path)
-
-        if paper_path.is_dir():
-            return _parse_paper(
-                paper_path,
-                statement_kinds=statement_kinds,
-                parsing_method=parsing_method,
-                validation_level=validation_level,
-                focus=focus,
-                context=context
-            )
-        elif paper_path.is_file():
-            with TemporaryDirectory() as temp_dir:
-                paper_dir = Path(temp_dir)
-                shutil.copy2(paper_path, paper_dir / paper_path.name)
-
-                return _parse_paper(
-                    paper_dir,
-                    statement_kinds=statement_kinds,
-                    parsing_method=parsing_method,
-                    validation_level=validation_level,
-                    focus=focus,
-                    context=context
-                )
         else:
-            raise FileNotFoundError(format_error(
-                ParseError.DOWNLOAD,
-                "Downloaded paper source not found"
-            ))
-    else:
-        raise FileNotFoundError(format_error(
-            ParseError.SYNTAX,
-            "arxiv_id and paper_path are both None"
-        ))
+            raise ValueError(f"Unknown source kind: {kind}")
 
-def _parse_paper(
-    paper_dir: Path,
-    statement_kinds: Set[str] = STATEMENT_KINDS,
-    parsing_method: ParsingMethod = ParsingMethod.PLASTEX,
-    validation_level: StatementValidationLevel = StatementValidationLevel.Paper,
-    focus: ParseFocus = ParseFocus.ALL,
-    context: int = 0
-) -> ParseResult:
+    # ---- core parse ------------------------------------------------------
 
-    do_statements = focus in (ParseFocus.ALL, ParseFocus.STATEMENTS)
-    do_preamble = focus in (ParseFocus.ALL, ParseFocus.PREAMBLE)
-    do_bibliography = focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+    def _parse_resolved(self, kind: str, value: str) -> ParseResult:
+        with self._materialize(kind, value) as paper_dir:
+            return self._parse_dir(paper_dir)
 
-    statements = None
-    preamble = None
-    bibliography = None
+    def _parse_dir(self, paper_dir: Path) -> ParseResult:
+        do_statements = self.focus in (ParseFocus.ALL, ParseFocus.STATEMENTS)
+        do_preamble = self.focus in (ParseFocus.ALL, ParseFocus.PREAMBLE)
+        do_bibliography = self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
 
-    if do_preamble or do_statements:
-        try:
-            main_file = guess_main_file(paper_dir)
-        except Exception as e:
-            raise RuntimeError(format_error(
-                ParseError.PARSING,
-                str(e)
-            ))
+        statements = None
+        preamble = None
+        bibliography = None
+        bibliography_bibtex = None
+        method_used = None
 
-    # Pre-compute flat_tex once when needed for preamble or context extraction,
-    # so neither path calls flatten_tex a second time inside the timeout window.
-    flat_tex = None
-    if do_preamble or (do_statements and context > 0):
-        try:
-            from .methods.regex.flatten import flatten_tex
-            flat_tex = flatten_tex(paper_dir, main_file, ignore_errors=True)
-        except Exception:
-            pass
+        main_file = None
+        if do_preamble or do_statements:
+            try:
+                main_file = guess_main_file(paper_dir)
+            except Exception as e:
+                raise RuntimeError(format_error(ParseError.PARSING, str(e)))
 
-    if do_preamble:
-        if flat_tex is not None:
+        # Flatten once if the preamble or context path needs it.
+        flat_tex = None
+        if do_preamble or (do_statements and self.context > 0):
+            try:
+                from .methods.regex.flatten import flatten_tex
+                flat_tex = flatten_tex(paper_dir, main_file, ignore_errors=True)
+            except Exception:
+                flat_tex = None
+
+        if do_preamble and flat_tex is not None:
             preamble = _extract_preamble(flat_tex)
 
-    if do_statements:
-        if parsing_method == ParsingMethod.PLASTEX:
-            from .methods.plasTeX import parse
-            error_type = ParseError.PLASTEX
-        else:
-            from .methods.regex import parse
-            error_type = ParseError.REGEX
+        if do_statements:
+            statements, method_used = self._run_methods(paper_dir, main_file, flat_tex)
 
-        try:
-            raw_statements: List[Statement] = parse(
-                paper_dir, main_file, context, flat_tex,
-                statement_kinds=statement_kinds if parsing_method == ParsingMethod.REGEX else None,
-            )
-        except Exception as e:
-            raise RuntimeError(format_error(
-                error_type,
-                str(e)
-            ))
+        if do_bibliography:
+            bibliography, bibliography_bibtex = parse_bibliography_from_dir(paper_dir)
 
-        if len(raw_statements) == 0:
-            raise RuntimeError(format_error(
-                ParseError.EMPTY,
-                "No environments found"
-            ))
+        return ParseResult(
+            statements=statements,
+            preamble=preamble,
+            bibliography=bibliography,
+            bibliography_bibtex=bibliography_bibtex,
+            method_used=method_used,
+        )
 
-        # Always include "proof" internally so connect_proofs can attach them,
-        # regardless of what the caller passed in statement_kinds.
-        internal_kinds = statement_kinds | {"proof"}
-        raw_statements = [
-            statement.model_copy(update={"kind": sk})
-            for statement in raw_statements
-            if (sk := next((sk for sk in internal_kinds if sk in statement.kind), None)) is not None
+    def _run_methods(
+        self,
+        paper_dir: Path,
+        main_file: Path,
+        flat_tex: Optional[str],
+    ) -> Tuple[List[Statement], str]:
+        ctx = ParseContext(
+            paper_dir=paper_dir,
+            main_file=main_file,
+            kinds=self.kinds,
+            context=self.context,
+            flat_tex=flat_tex,
+            timeout=self.timeout,
+        )
+
+        errors: List[str] = []
+        first_exc: Optional[Exception] = None
+        for method in self.methods:
+            try:
+                raw = method.parse(ctx)
+                statements = self._postprocess(raw)
+            except Exception as e:
+                if first_exc is None:
+                    first_exc = e
+                errors.append(f"{method.name}: {e}")
+                continue
+
+            if statements:
+                return statements, method.name
+            errors.append(f"{method.name}: no statements found")
+
+        raise RuntimeError(format_error(
+            ParseError.EMPTY,
+            "No method produced statements. " + " | ".join(errors),
+        )) from first_exc
+
+    def _postprocess(self, raw_statements: List[Statement]) -> List[Statement]:
+        """Normalize kinds, validate, and attach proofs. May raise on PAPER-level
+        validation failure (so the Parser can fall back to the next method)."""
+        if not raw_statements:
+            return []
+
+        # Normalize each statement's kind to a requested kind (substring match),
+        # always keeping proofs so connect_proofs can attach them.
+        internal_kinds = self.kinds | {"proof"}
+        normalized = [
+            stmt.model_copy(update={"kind": sk})
+            for stmt in raw_statements
+            if (sk := next((k for k in internal_kinds if k in stmt.kind), None)) is not None
         ]
+        if not normalized:
+            return []
 
-        if len(raw_statements) == 0:
-            raise RuntimeError(format_error(
-                ParseError.EMPTY,
-                "No statements found"
-            ))
+        if self.validation == ValidationLevel.STATEMENT:
+            kept = []
+            for stmt in normalized:
+                try:
+                    validate_statement(stmt)
+                    kept.append(stmt)
+                except Exception:
+                    pass
+            normalized = kept
+        elif self.validation == ValidationLevel.PAPER:
+            validate_statements(normalized)
+        # ValidationLevel.NONE: no checks
 
-        match validation_level:
-            case StatementValidationLevel.Statement:
-                valid_statements: List[Statement] = []
+        if not normalized:
+            return []
 
-                for statement in raw_statements:
-                    try:
-                        validate_statement(statement)
-                        valid_statements.append(statement)
-                    except Exception:
-                        pass
-
-                if len(valid_statements) == 0:
-                    raise ValueError(format_error(
-                        ParseError.VALIDATION,
-                        "All statements are invalid"
-                    ))
-
-                raw_statements = valid_statements
-
-            case StatementValidationLevel.Paper:
-                validate_statements(raw_statements)
-
-        statements = connect_proofs(raw_statements)
-
-    bibliography_bibtex = None
-    if do_bibliography:
-        bibliography, bibliography_bibtex = parse_bibliography_from_dir(paper_dir)
-
-    return ParseResult(statements=statements, preamble=preamble, bibliography=bibliography, bibliography_bibtex=bibliography_bibtex)
+        return connect_proofs(normalized)

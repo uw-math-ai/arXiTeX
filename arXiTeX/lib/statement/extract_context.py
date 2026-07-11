@@ -1,5 +1,5 @@
 """
-Shared context extraction for both regex and plasTeX parsers.
+Shared context extraction helpers for the regex parser.
 
 Given a flattened LaTeX source and a list of raw environment names in
 document order, finds each \\begin{env}...\\end{env} block via a sequential

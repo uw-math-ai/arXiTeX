@@ -1,0 +1,39 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{arxitex-hook}[2026/07/11 arXiTeX statement capture hook]
+
+% Instruments theorem-like and proof-like environments so that a real TeX run
+% writes each statement's number, note and (faithful) body to \jobname.arxitex.
+% Environments to capture are registered via \arxitexInstrument /
+% \arxitexInstrumentProof, injected into the preamble by arXiTeX.
+
+\RequirePackage{environ}
+
+\newwrite\arxitex@out
+\immediate\openout\arxitex@out=\jobname.arxitex\relax
+
+\def\arxitex@rec#1{\immediate\write\arxitex@out{#1}}
+
+% \arxitexInstrument{env} -- numbered statement environment (records REF).
+\newcommand\arxitexInstrument[1]{\AtBeginDocument{\arxitex@patch{#1}{1}}}
+% \arxitexInstrumentProof{env} -- unnumbered / proof-like environment (no REF).
+\newcommand\arxitexInstrumentProof[1]{\AtBeginDocument{\arxitex@patch{#1}{0}}}
+
+% #1 = env name, #2 = 1 if numbered (emit REF), 0 otherwise.
+\newcommand\arxitex@patch[2]{%
+  \@ifundefined{#1}{}{%
+    \expandafter\let\csname arxitex@ob@#1\expandafter\endcsname\csname #1\endcsname
+    \expandafter\let\csname arxitex@oe@#1\expandafter\endcsname\csname end#1\endcsname
+    \RenewEnviron{#1}[1][]{%
+      \arxitex@rec{<<<ARXITEX BEGIN #1>>>}%
+      \csname arxitex@ob@#1\endcsname
+        \if#21\arxitex@rec{REF=\@currentlabel}\fi
+        \arxitex@rec{NOTE=##1}%
+        \arxitex@rec{BODY=\detokenize\expandafter{\BODY}}%
+        \BODY
+      \csname arxitex@oe@#1\endcsname
+      \arxitex@rec{<<<ARXITEX END #1>>>}%
+    }%
+  }%
+}
+
+\endinput

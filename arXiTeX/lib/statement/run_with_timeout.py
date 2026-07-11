@@ -1,36 +1,44 @@
-import signal
+"""
+Cross-platform timeout helper.
+
+The previous implementation used ``signal.SIGALRM``, which is Unix-only and
+breaks on Windows. This version runs the work on a daemon thread and abandons it
+if it overruns. Methods that shell out (the ``tex`` method) are also given the
+timeout directly so their subprocess is killed rather than merely abandoned.
+"""
+
+import threading
+from typing import Any, Callable
+
 from .errors import ParseError, format_error
 
 
-def run_with_timeout(seconds: int):
+def run_with_timeout(seconds: int, func: Callable[..., Any], *args, **kwargs) -> Any:
+    """Run ``func(*args, **kwargs)``, raising ``TimeoutError`` after ``seconds``.
+
+    If ``seconds`` is falsy, the function is run directly with no timeout.
     """
-    Decorator that raises TimeoutError if the wrapped function takes longer
-    than `seconds` to complete.
+    if not seconds or seconds <= 0:
+        return func(*args, **kwargs)
 
-    Uses SIGALRM (Unix only) rather than a forked subprocess. The fork-based
-    approach deadlocks when called from inside a ProcessPoolExecutor worker:
-    fork() copies the worker's locked logging handlers into the child, and any
-    subsequent log write in the child blocks forever waiting for a lock that
-    will never be released.
+    box: dict = {}
 
-    SIGALRM fires in the same process, so there are no inherited locks and no
-    deadlock risk. Workers are single-threaded, so signal delivery is reliable.
-    """
-    def decorator(func):
-        def wraps(*args, **kwargs):
-            def _handler(signum, frame):
-                raise TimeoutError(format_error(
-                    ParseError.TIMEOUT,
-                    f"Took longer than {seconds} seconds"
-                ))
+    def _target():
+        try:
+            box["value"] = func(*args, **kwargs)
+        except BaseException as e:  # noqa: BLE001 - re-raised on the caller thread
+            box["error"] = e
 
-            old_handler = signal.signal(signal.SIGALRM, _handler)
-            signal.alarm(seconds)
-            try:
-                return func(*args, **kwargs)
-            finally:
-                signal.alarm(0)          # cancel any pending alarm
-                signal.signal(signal.SIGALRM, old_handler)  # restore previous handler
+    thread = threading.Thread(target=_target, daemon=True)
+    thread.start()
+    thread.join(seconds)
 
-        return wraps
-    return decorator
+    if thread.is_alive():
+        raise TimeoutError(format_error(
+            ParseError.TIMEOUT,
+            f"Took longer than {seconds} seconds",
+        ))
+
+    if "error" in box:
+        raise box["error"]
+    return box.get("value")
