@@ -1,0 +1,2 @@
+recursive-include arxitex *.sty
+include LICENSE README.md
