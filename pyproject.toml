@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arXiTeX"
-version = "0.1.0"
-description = "Library for building the TheoremSearch dataset"
+version = "0.2.0"
+description = "Library for parsing arXiv papers into structured statements"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -15,14 +15,24 @@ authors = [
 ]
 
 dependencies = [
-  "plasTeX @ git+https://github.com/plastex/plastex.git",
   "requests",
   "kaggle",
   "pydantic",
-  "bibtexparser"
+  "bibtexparser",
+  "boto3"
 ]
 
 [project.optional-dependencies]
+# LLM parsing method (provider-agnostic via litellm)
+llm = [
+  "litellm"
+]
+
+dev = [
+  "pytest",
+  "litellm"
+]
+
 slogan = [
   "jinja2"
 ]
@@ -38,3 +48,9 @@ arXiTeX = "arXiTeX.__main__:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["arXiTeX*"]
+
+[tool.setuptools.package-data]
+"arXiTeX.lib.statement.methods.tex" = ["*.sty"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
