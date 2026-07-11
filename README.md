@@ -26,10 +26,12 @@ any downstream task that needs structured access to arXiv content.
 ## Installation
 
 ```
-pip install git+https://github.com/uw-math-ai/arXiTeX.git
+pip install arxitex
 ```
 
-The `"llm"` method needs an extra: `pip install "arXiTeX[llm] @ git+https://github.com/uw-math-ai/arXiTeX.git"`.
+For the `"llm"` method, add the extra: `pip install "arxitex[llm]"`.
+
+(Or install the latest from source: `pip install git+https://github.com/uw-math-ai/arXiTeX.git`.)
 
 The `"tex"` method needs a TeX engine on your `PATH` —
 [tectonic](https://tectonic-typesetting.github.io/) (recommended, a single
@@ -48,7 +50,7 @@ and enriches each paper with citation counts and reference IDs via
 [Semantic Scholar](https://www.semanticscholar.org/).
 
 ```python
-import arXiTeX as arx
+import arxitex as arx
 
 for batch in arx.paper_catalog(
     download_dir="data/", # where to cache the Kaggle metadata ZIP
@@ -85,7 +87,7 @@ then call `.parse(...)` on any number of papers. A paper source can be an arXiv
 ID (downloaded automatically), a local path, or an `s3://` URI — auto-detected.
 
 ```python
-import arXiTeX as arx
+import arxitex as arx
 
 parser = arx.Parser(method="tex") # real TeX engine; macros/packages expanded natively
 
@@ -109,7 +111,7 @@ There are three parsing methods, from fastest to most capable:
 |---|---|---|---|
 | `"regex"` | Pattern-matches environments and expands simple macros. | nothing | speed, huge corpora, no system deps |
 | `"tex"` | Runs a **real TeX engine** over an instrumented copy of the paper, so packages, `\newtheorem` numbering, conditionals, and `\input`s all resolve natively. | a TeX engine on `PATH` | accuracy on arbitrary packages/macros |
-| `"llm"` | Sends section-aware chunks to an LLM and merges the extracted statements. | `pip install 'arXiTeX[llm]'` + API key | messy sources, semantic edge cases |
+| `"llm"` | Sends section-aware chunks to an LLM and merges the extracted statements. | `pip install 'arxitex[llm]'` + API key | messy sources, semantic edge cases |
 
 The `"tex"` method uses [**tectonic**](https://tectonic-typesetting.github.io/)
 by default (a single self-contained binary that fetches only the packages a
@@ -120,7 +122,7 @@ paper needs). To use an existing TeX Live install instead, pass
 the provider's API key in the environment (or `api_key=...`).
 
 ```python
-import arXiTeX as arx
+import arxitex as arx
 
 arx.Parser(method="regex") # fast, no deps
 arx.Parser(method=arx.Tex(engine="pdflatex")) # real TeX via local TeX Live
@@ -185,13 +187,13 @@ arx.Parser(focus="bibliography").parse("2109.06451") # just the bibliography
 
 #### Command line
 
-Installing the package also provides an `arXiTeX` CLI:
+Installing the package also provides an `arxitex` CLI:
 
 ```
-arXiTeX 2109.06451 -o statements.jsonl
-arXiTeX path/to/paper/ -m tex -m regex  # fallback chain
-arXiTeX 2109.06451 -m tex --engine pdflatex
-arXiTeX 2109.06451 -m llm --model openai/gpt-4o
+arxitex 2109.06451 -o statements.jsonl
+arxitex path/to/paper/ -m tex -m regex  # fallback chain
+arxitex 2109.06451 -m tex --engine pdflatex
+arxitex 2109.06451 -m llm --model openai/gpt-4o
 ```
 
 ------------------------------------------------------------------------
@@ -203,7 +205,7 @@ Supports BibTeX (`.bib`), biblatex `.bbl`, amsrefs `.bbl`, and inline
 `\bibitem` entries.
 
 ```python
-import arXiTeX as arx
+import arxitex as arx
 
 bibliography, is_bibtex = arx.parse_bibliography(arxiv_id="2109.06451")
 
