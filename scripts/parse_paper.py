@@ -1,14 +1,14 @@
 """
 Script for parsing a single paper. Not useful for parsing many papers quickly.
 
-This is a thin convenience wrapper around the arXiTeX ``Parser``. For most uses
-prefer the installed CLI:  ``arXiTeX <source> -o out.jsonl``  (see ``arXiTeX -h``).
+This is a thin convenience wrapper around the arxitex ``Parser``. For most uses
+prefer the installed CLI:  ``arxitex <source> -o out.jsonl``  (see ``arxitex -h``).
 """
 
 from argparse import ArgumentParser
 from pathlib import Path
 
-from arXiTeX import Parser
+from arxitex import Parser
 
 
 if __name__ == "__main__":

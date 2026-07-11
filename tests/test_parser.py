@@ -2,8 +2,8 @@
 
 import pytest
 
-import arXiTeX as arx
-from arXiTeX import Parser, Tex
+import arxitex as arx
+from arxitex import Parser, Tex
 from conftest import FIXTURE_PATHS
 
 

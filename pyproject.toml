@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "arXiTeX"
+name = "arxitex"
 version = "0.2.0"
 description = "Library for parsing arXiv papers into structured statements"
 readme = "README.md"
@@ -12,6 +12,19 @@ license = { text = "MIT" }
 
 authors = [
   { name = "Eric Leonen", email = "ericleonen@gmail.com" }
+]
+keywords = ["arxiv", "latex", "tex", "parsing", "theorem", "mathematics", "dataset"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Text Processing :: Markup :: LaTeX",
 ]
 
 dependencies = [
@@ -42,15 +55,20 @@ embedding = [
   "sentence_transformers"
 ]
 
+[project.urls]
+Homepage = "https://github.com/uw-math-ai/arXiTeX"
+Repository = "https://github.com/uw-math-ai/arXiTeX"
+Issues = "https://github.com/uw-math-ai/arXiTeX/issues"
+
 [project.scripts]
-arXiTeX = "arXiTeX.__main__:main"
+arxitex = "arxitex.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["arXiTeX*"]
+include = ["arxitex*"]
 
 [tool.setuptools.package-data]
-"arXiTeX.lib.statement.methods.tex" = ["*.sty"]
+"arxitex.lib.statement.methods.tex" = ["*.sty"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -8,7 +8,7 @@ import json
 from typing import Iterator, List
 from pathlib import Path
 from datetime import datetime, timezone
-from arXiTeX.types import ArXivPaper
+from arxitex.types import ArXivPaper
 from .download_arxiv_metadata import download_arxiv_metadata
 from .citations import fetch_paper_s2
 from .default_categories import DEFAULT_CATEGORIES

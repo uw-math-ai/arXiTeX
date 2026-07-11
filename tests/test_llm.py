@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import litellm
 
-import arXiTeX as arx
-from arXiTeX.lib.statement.methods.llm import _chunk, _parse_response
+import arxitex as arx
+from arxitex.lib.statement.methods.llm import _chunk, _parse_response
 from conftest import FIXTURE_PATHS, by_label
 
 

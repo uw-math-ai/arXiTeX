@@ -4,7 +4,7 @@ The ``llm`` parsing method: provider-agnostic statement extraction via litellm.
 The paper is flattened, split into section-aware chunks that fit the model's
 context, and each chunk is sent to the model with a strict JSON schema. Results
 are merged in document order and de-duplicated. litellm is an optional
-dependency (``pip install 'arXiTeX[llm]'``); the model string and API key follow
+dependency (``pip install 'arxitex[llm]'``); the model string and API key follow
 litellm conventions (e.g. ``"anthropic/claude-sonnet-5"`` +
 ``ANTHROPIC_API_KEY``, ``"openai/gpt-4o"`` + ``OPENAI_API_KEY``).
 """
@@ -14,10 +14,10 @@ import re
 from pathlib import Path
 from typing import List, Optional, Set
 
-from arXiTeX.types import Statement
-from arXiTeX.lib.statement.methods.base import ParseContext, Method
-from arXiTeX.lib.statement.methods.regex.flatten import flatten_tex
-from arXiTeX.lib.statement.extract_context import strip_comments
+from arxitex.types import Statement
+from arxitex.lib.statement.methods.base import ParseContext, Method
+from arxitex.lib.statement.methods.regex.flatten import flatten_tex
+from arxitex.lib.statement.extract_context import strip_comments
 
 _DEFAULT_MODEL = "anthropic/claude-sonnet-5"
 _DOC_BEGIN_RE = re.compile(r"\\begin\s*\{document\}")
@@ -116,7 +116,7 @@ def llm_parse(
     except ImportError as e:
         raise ImportError(
             "The 'llm' method requires litellm. Install it with: "
-            "pip install 'arXiTeX[llm]'"
+            "pip install 'arxitex[llm]'"
         ) from e
 
     flat = ctx.flat_tex or flatten_tex(ctx.paper_dir, ctx.main_file, ignore_errors=True)

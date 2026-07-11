@@ -2,7 +2,7 @@
 
 import pytest
 
-import arXiTeX as arx
+import arxitex as arx
 from conftest import FIXTURE_PATHS, by_label, requires_tectonic
 
 pytestmark = requires_tectonic

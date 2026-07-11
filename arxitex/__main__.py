@@ -1,20 +1,20 @@
 """
-Command-line interface for arXiTeX.
+Command-line interface for arxitex.
 
 Examples
 --------
-    arXiTeX 2109.06451
-    arXiTeX path/to/paper/ -o statements.jsonl
-    arXiTeX 2109.06451 -m tex -m regex          # fallback chain
-    arXiTeX 2109.06451 -m tex --engine pdflatex
-    arXiTeX 2109.06451 -m llm --model openai/gpt-4o
+    arxitex 2109.06451
+    arxitex path/to/paper/ -o statements.jsonl
+    arxitex 2109.06451 -m tex -m regex          # fallback chain
+    arxitex 2109.06451 -m tex --engine pdflatex
+    arxitex 2109.06451 -m llm --model openai/gpt-4o
 """
 
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-from arXiTeX import Parser, Tex, Llm, STATEMENT_KINDS
+from arxitex import Parser, Tex, Llm, STATEMENT_KINDS
 
 
 def _build_methods(args):
@@ -30,7 +30,7 @@ def _build_methods(args):
 
 
 def main() -> None:
-    ap = ArgumentParser(prog="arXiTeX", description="Parse an arXiv/LaTeX paper into structured statements.")
+    ap = ArgumentParser(prog="arxitex", description="Parse an arXiv/LaTeX paper into structured statements.")
     ap.add_argument("source", help="arXiv id, local path, or s3:// URI")
     ap.add_argument("-o", "--output", help="Write statements as JSONL to this file (default: stdout)")
     ap.add_argument(

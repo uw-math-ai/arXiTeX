@@ -16,11 +16,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Optional, Set
 
-from arXiTeX.types import Statement
-from arXiTeX.lib.statement.methods.base import ParseContext, Method, UnsupportedOption
-from arXiTeX.lib.statement.methods._macros import expand_user_macros
-from arXiTeX.lib.statement.methods.regex.flatten import flatten_tex
-from arXiTeX.lib.statement.methods.regex.log_envs import _parse_theorem_defs
+from arxitex.types import Statement
+from arxitex.lib.statement.methods.base import ParseContext, Method, UnsupportedOption
+from arxitex.lib.statement.methods._macros import expand_user_macros
+from arxitex.lib.statement.methods.regex.flatten import flatten_tex
+from arxitex.lib.statement.methods.regex.log_envs import _parse_theorem_defs
 
 _HOOK_STY = Path(__file__).with_name("arxitex-hook.sty")
 

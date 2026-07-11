@@ -1,5 +1,5 @@
 import re
-from arXiTeX.types import Statement
+from arxitex.types import Statement
 from typing import List
 from .errors import ParseError, format_error
 

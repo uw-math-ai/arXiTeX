@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Set
 
-from arXiTeX.types import Statement
+from arxitex.types import Statement
 
 
 class UnsupportedOption(ValueError):

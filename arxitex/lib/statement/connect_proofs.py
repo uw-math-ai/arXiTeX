@@ -1,6 +1,6 @@
 import re
 from typing import List
-from arXiTeX.types import Statement
+from arxitex.types import Statement
 
 _REF_RE = re.compile(
     r'\\(?:[a-zA-Z]*[Rr]ef|autoref|cref|Cref|eqref)\s*\{([^}]*)\}'

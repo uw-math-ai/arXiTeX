@@ -10,7 +10,7 @@ Public method classes:
 
 from typing import List, Set, Union
 
-from arXiTeX.types import Statement
+from arxitex.types import Statement
 from .base import Method, ParseContext, UnsupportedOption
 from .tex import Tex
 from .llm import Llm

@@ -3,8 +3,8 @@ from typing import Collection, List, Optional
 from pathlib import Path
 from .log_envs import log_envs
 from .flatten import flatten_tex
-from arXiTeX.types import Statement
-from arXiTeX.lib.statement.extract_context import strip_comments
+from arxitex.types import Statement
+from arxitex.lib.statement.extract_context import strip_comments
 
 _PROOF_BEGIN_RE = re.compile(r'\A\s*\\begin\s*\{proof\*?\}', re.IGNORECASE)
 _PROOF_END_RE   = re.compile(r'\\end\s*\{proof\*?\}',        re.IGNORECASE)

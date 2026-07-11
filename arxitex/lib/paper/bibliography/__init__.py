@@ -3,7 +3,7 @@ import bibtexparser
 from pathlib import Path
 from typing import List, Optional
 from tempfile import TemporaryDirectory
-from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
+from arxitex.lib.utils.download_arxiv_paper import download_arxiv_paper
 
 # Extracts the entire thebibliography environment
 _THEBIB_RE = re.compile(

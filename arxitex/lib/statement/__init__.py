@@ -1,5 +1,5 @@
 """
-The ``Parser`` — arXiTeX's single entry point for turning a paper into
+The ``Parser`` — arxitex's single entry point for turning a paper into
 structured statements, preamble, and bibliography.
 
 A ``Parser`` bundles *how* to parse (method(s), kinds, focus, validation, ...)
@@ -14,15 +14,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator, List, Optional, Set, Tuple
 
-from arXiTeX.types import (
+from arxitex.types import (
     Statement,
     ValidationLevel,
     ParseFocus,
     ParseResult,
 )
-from arXiTeX.lib.utils.download_arxiv_paper import download_arxiv_paper
-from arXiTeX.lib.utils.download_s3_paper import download_s3_paper
-from arXiTeX.lib.paper.bibliography import parse_bibliography_from_dir
+from arxitex.lib.utils.download_arxiv_paper import download_arxiv_paper
+from arxitex.lib.utils.download_s3_paper import download_s3_paper
+from arxitex.lib.paper.bibliography import parse_bibliography_from_dir
 from .methods import Method, ParseContext, resolve_methods, MethodSpec
 from .validate_statements import validate_statement, validate_statements
 from .run_with_timeout import run_with_timeout
