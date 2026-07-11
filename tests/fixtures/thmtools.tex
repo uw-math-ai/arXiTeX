@@ -1,0 +1,29 @@
+% thmtools-based declarations. Edge cases showcased:
+%   - \declaretheorem with numberwithin (section-based numbering)
+%   - a sibling theorem sharing the counter
+%   - an unnumbered declared theorem (numbered=no)
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{thmtools}
+
+\declaretheorem[numberwithin=section]{theorem}
+\declaretheorem[sibling=theorem]{corollary}
+\declaretheorem[numbered=no, name=Remark]{remark}
+
+\begin{document}
+
+\section{Results}
+
+\begin{theorem}\label{thm:t1}
+Every bounded monotone sequence of real numbers converges to a finite limit.
+\end{theorem}
+
+\begin{corollary}\label{cor:c1}
+A bounded monotone sequence is Cauchy.
+\end{corollary}
+
+\begin{remark}
+This remark is declared with numbered=no and must have no reference number.
+\end{remark}
+
+\end{document}

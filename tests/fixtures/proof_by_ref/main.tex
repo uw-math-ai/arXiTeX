@@ -1,0 +1,24 @@
+% Proof attached by reference, not adjacency. Edge cases showcased:
+%   - a proof whose \begin{proof}[Proof of Theorem~\ref{...}] names its target
+%   - an unrelated statement sitting between the theorem and its proof
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\begin{document}
+
+\begin{theorem}\label{thm:key}
+The square of any odd integer is odd.
+\end{theorem}
+
+\begin{lemma}\label{lem:filler}
+This lemma sits between the theorem and its proof to prevent adjacency matching.
+\end{lemma}
+
+\begin{proof}[Proof of Theorem~\ref{thm:key}]
+Write the odd integer as $2k + 1$; its square is $4k^2 + 4k + 1$, which is odd.
+\end{proof}
+
+\end{document}

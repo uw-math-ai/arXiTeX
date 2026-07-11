@@ -1,0 +1,14 @@
+% A document with no theorem-like environments at all.
+% Both methods should report that no statements were found.
+\documentclass{article}
+\begin{document}
+
+\section{Introduction}
+This short note contains only prose. There are no theorems, lemmas, definitions,
+or proofs to extract, so parsing should yield no statements.
+
+\section{Discussion}
+Nothing to see here either. The parser must handle this gracefully rather than
+crashing or inventing statements.
+
+\end{document}

@@ -1,0 +1,20 @@
+% Multi-file project. Edge cases showcased:
+%   - statements split across \input files (flattening / native \input resolution)
+%   - \numberwithin to reset the counter per section
+%   - a nested environment (align inside a theorem body)
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\numberwithin{theorem}{section}
+\numberwithin{proposition}{section}
+
+\newcommand{\Z}{\mathbb{Z}}
+
+\begin{document}
+
+\input{sections/prelim}
+\input{sections/results}
+
+\end{document}

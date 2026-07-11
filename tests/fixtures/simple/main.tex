@@ -1,0 +1,49 @@
+% Single-file paper. Edge cases showcased:
+%   - section-based numbering (theorem 1.1, 2.1, ...)
+%   - a lemma sharing the theorem counter (1.2)
+%   - an unnumbered environment (\newtheorem*)
+%   - a proof immediately following its theorem
+%   - user macros (\newcommand, with and without arguments) to be expanded
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+
+\begin{document}
+
+\section{Foundations}
+
+\begin{definition}\label{def:norm}
+A \emph{norm} on $\R^n$ is a function $\norm{\cdot} : \R^n \to \R$ that is
+positive-definite, homogeneous, and satisfies the triangle inequality.
+\end{definition}
+
+\begin{theorem}[Nonnegativity]\label{thm:main}
+For every $x \in \R^n$ we have $\norm{x} \geq 0$, with equality iff $x = 0$.
+\end{theorem}
+
+\begin{proof}
+Immediate from positive-definiteness in Definition~\ref{def:norm}.
+\end{proof}
+
+\begin{lemma}\label{lem:aux}
+There exists $y \in \R^n$ with $\norm{y} > 0$ whenever $n \geq 1$.
+\end{lemma}
+
+\section{Remarks}
+
+\begin{theorem}
+A second numbered theorem, appearing in the second section.
+\end{theorem}
+
+\begin{remark}
+This unnumbered remark should carry no reference number.
+\end{remark}
+
+\end{document}

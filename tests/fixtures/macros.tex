@@ -1,0 +1,20 @@
+% Macro-heavy source. Edge cases showcased:
+%   - zero-arg \newcommand, multi-arg \newcommand, and \def
+%   - a macro defined in terms of another macro (nested expansion)
+\documentclass{article}
+\usepackage{amsmath, amsthm, amssymb}
+
+\newtheorem{theorem}{Theorem}
+
+\newcommand{\field}{\mathbb{F}}
+\newcommand{\poly}[1]{\field[#1]}
+\def\deg{\operatorname{deg}}
+\newcommand{\degpoly}[1]{\deg \poly{#1}}
+
+\begin{document}
+
+\begin{theorem}\label{thm:macros}
+For a nonconstant $f \in \poly{x}$ we have $\degpoly{x} \geq 1$ over the field $\field$.
+\end{theorem}
+
+\end{document}
