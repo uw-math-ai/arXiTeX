@@ -51,7 +51,7 @@ and enriches each paper with citation counts and reference IDs via
 import arXiTeX as arx
 
 for batch in arx.paper_catalog(
-    download_dir="data/",        # where to cache the Kaggle metadata ZIP
+    download_dir="data/", # where to cache the Kaggle metadata ZIP
     categories=["math", "cs.LG"],
     batch_size=100,
 ):
@@ -87,11 +87,11 @@ ID (downloaded automatically), a local path, or an `s3://` URI — auto-detected
 ```python
 import arXiTeX as arx
 
-parser = arx.Parser(method="tex")      # real TeX engine; macros/packages expanded natively
+parser = arx.Parser(method="tex") # real TeX engine; macros/packages expanded natively
 
-result = parser.parse("2109.06451")    # arXiv ID
-# result = parser.parse("path/to/paper/")          # local directory or .tex file
-# result = parser.parse(s3_uri="s3://bucket/p.tar.gz")
+result = parser.parse("2109.06451") # arXiv ID
+# OR result = parser.parse("path/to/paper/") # a local directory or .tex file
+# OR result = parser.parse(s3_uri="s3://bucket/p.tar.gz")
 
 print("parsed with:", result.method_used)
 for stmt in result.statements:
@@ -122,9 +122,9 @@ the provider's API key in the environment (or `api_key=...`).
 ```python
 import arXiTeX as arx
 
-arx.Parser(method="regex")                       # fast, no deps
-arx.Parser(method=arx.Tex(engine="pdflatex"))    # real TeX via local TeX Live
-arx.Parser(method=arx.Llm(model="openai/gpt-4o"))  # LLM extraction
+arx.Parser(method="regex") # fast, no deps
+arx.Parser(method=arx.Tex(engine="pdflatex")) # real TeX via local TeX Live
+arx.Parser(method=arx.Llm(model="openai/gpt-4o")) # LLM extraction
 ```
 
 #### Fallback chains
@@ -135,7 +135,7 @@ which one produced the output.
 
 ```python
 # Try the real TeX engine; fall back to regex if it's unavailable or fails.
-parser = arx.Parser(method=["tex", "regex"])     # this is the default
+parser = arx.Parser(method=["tex", "regex"]) # this is the default
 ```
 
 **Parameters** (`Parser(...)`)
@@ -171,9 +171,9 @@ of `arxiv_id=`, `path=`, or `s3_uri=`.
 so you can skip work you don't need:
 
 ```python
-arx.Parser(focus="statements").parse("2109.06451")     # skip preamble + bibliography
-arx.Parser(focus="preamble").parse("2109.06451")       # just the LaTeX preamble
-arx.Parser(focus="bibliography").parse("2109.06451")   # just the bibliography
+arx.Parser(focus="statements").parse("2109.06451") # skip preamble + bibliography
+arx.Parser(focus="preamble").parse("2109.06451") # just the LaTeX preamble
+arx.Parser(focus="bibliography").parse("2109.06451") # just the bibliography
 ```
 
 | `focus` | `statements` | `preamble` | `bibliography` |
@@ -189,7 +189,7 @@ Installing the package also provides an `arXiTeX` CLI:
 
 ```
 arXiTeX 2109.06451 -o statements.jsonl
-arXiTeX path/to/paper/ -m tex -m regex           # fallback chain
+arXiTeX path/to/paper/ -m tex -m regex  # fallback chain
 arXiTeX 2109.06451 -m tex --engine pdflatex
 arXiTeX 2109.06451 -m llm --model openai/gpt-4o
 ```
@@ -233,13 +233,13 @@ dicts (containing `title` and `arxiv_id` where found). The bool is
 class ArXivPaper(BaseModel):
     arxiv_id: str
     title: str
-    authors: List[str]         # formatted as "First Middle Last"
+    authors: List[str]            # formatted as "First Middle Last"
     url: str
-    categories: List[str]      # categories[0] is the primary category
+    categories: List[str]         # categories[0] is the primary category
     updated_at: datetime
     journal_ref: Optional[str]
     doi: Optional[str]
-    license: Optional[str]     # stored as a URL when available
+    license: Optional[str]        # stored as a URL when available
     abstract: str
     citation_count: Optional[int]
     reference_ids: List[str]
@@ -249,13 +249,13 @@ class ArXivPaper(BaseModel):
 
 ```python
 class Statement(BaseModel):
-    kind: str                  # e.g. "theorem", "lemma", "proof"
-    ref: Optional[str]         # numbering as it appears in the document, e.g. "1.1"
-    note: Optional[str]        # optional title or caption
-    label: Optional[str]       # LaTeX \label{...} key
-    body: str                  # LaTeX body, user macros expanded where possible
-    proof: Optional[str]       # raw LaTeX proof, if present
-    pre_context: Optional[str] # text before the statement (regex method + context only)
+    kind: str                   # e.g. "theorem", "lemma", "proof"
+    ref: Optional[str]          # numbering as it appears in the document, e.g. "1.1"
+    note: Optional[str]         # optional title or caption
+    label: Optional[str]        # LaTeX \label{...} key
+    body: str                   # LaTeX body, user macros expanded where possible
+    proof: Optional[str]        # raw LaTeX proof, if present
+    pre_context: Optional[str]  # text before the statement (regex method + context only)
     post_context: Optional[str] # text after the statement (regex method + context only)
 ```
 
@@ -268,7 +268,7 @@ class ParseResult:
     preamble: Optional[str]
     bibliography: Optional[Dict[str, Dict[str, str]]]
     bibliography_bibtex: Optional[bool]
-    method_used: Optional[str]   # which method produced `statements` (e.g. "tex", "regex")
+    method_used: Optional[str] # which method produced `statements` (e.g. "tex", "regex")
 ```
 
 ------------------------------------------------------------------------
