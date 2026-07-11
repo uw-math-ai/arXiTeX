@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="images/logo-dark.png">
-    <img alt="arXiTeX" src="images/logo-light.png" width="440">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/uw-math-ai/arXiTeX/main/images/logo-dark.png">
+    <img alt="arXiTeX" src="https://raw.githubusercontent.com/uw-math-ai/arXiTeX/main/images/logo-light.png" width="440">
   </picture>
 </p>
 
