@@ -1,0 +1,16 @@
+{
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Zero-/multi-arg \\newcommand and \\def, including a macro defined via another macro. Body records the fully-expanded ideal.",
+  "tex_source": "tests/fixtures/macros.tex",
+  "statements": [
+    {
+      "kind": "theorem",
+      "ref": "1",
+      "note": null,
+      "label": "thm:macros",
+      "body": "For a nonconstant $f \\in \\mathbb{F}[x]$ we have $\\operatorname{deg} \\mathbb{F}[x] \\geq 1$ over the field $\\mathbb{F}$.",
+      "proof": null
+    }
+  ]
+}

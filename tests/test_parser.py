@@ -4,7 +4,7 @@ import pytest
 
 import arxitex as arx
 from arxitex import Parser, Tex
-from conftest import FIXTURE_PATHS
+from conftest import FIXTURE_PATHS, requires_tectonic
 
 
 def test_positional_source_autodetects_local_path():
@@ -63,6 +63,20 @@ def test_validation_none_keeps_everything():
         path=FIXTURE_PATHS["simple"]
     )
     assert res.statements
+
+
+def test_no_statements_raises():
+    # a paper with nothing to parse must fail loudly rather than return []
+    with pytest.raises(RuntimeError):
+        Parser(method="regex", focus="statements").parse(path=FIXTURE_PATHS["no_statements"])
+
+
+@requires_tectonic
+def test_no_statements_raises_with_tex_engine():
+    with pytest.raises(RuntimeError):
+        Parser(method="tex", focus="statements", timeout=180).parse(
+            path=FIXTURE_PATHS["no_statements"]
+        )
 
 
 def test_kinds_filter():

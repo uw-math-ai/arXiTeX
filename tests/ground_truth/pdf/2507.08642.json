@@ -1,0 +1,250 @@
+{
+  "arxiv_id": "2507.08642",
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Uses tikz",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... be a good moduli space where ... is an Artin stack ... More ... maps to the closed point of ... then one can choose an extension such that also the closed point of ... maps to the closed poitn of ...",
+      "proof": "We first assume ... which concludes the argument ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.2",
+      "body": "We can factor the resulting morphism ... without loss of generality we can assume that this filling is representable."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.3",
+      "body": "Let $R$ and $K$ be as above and let ... is a further root stack.",
+      "proof": "When $R$ is henselian ... yields the required extension."
+    },
+    {
+      "kind": "remark",
+      "number": "1.4",
+      "body": "The above theorem is the first step ... for Kempf's Theorem when $K$ is not perfect in ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.5",
+      "body": "Suppose $C$ is a locally excellent ... along the complement of domain of definition for ...",
+      "proof": "For ... be points of indeterminancy ... by the universal property of pushouts ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.6",
+      "body": "Let $C$ be as in ... from some root stack of $C$.",
+      "proof": "... For ... note that ... The result then follows from ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.7",
+      "body": "Let ... be a finite type morphism of Artin stacks ... there exists a root stack ... and dotted arrows filling in the diagram."
+    },
+    {
+      "kind": "remark",
+      "number": "1.8",
+      "body": "Not that assumption ... from other assumptions in characteristics 0."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.9",
+      "body": "Let ... be a group over a root stack ... denotes the groupoid of torsos.",
+      "proof": "By ... such that any $K$-point extends to ... point of ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.10",
+      "body": "Compare ... with ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.11",
+      "body": "The kernel of the natural map ... the Bruhat-Tits building of $G$ over $K$ ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.12",
+      "body": "Suppose $G$ is as in ... and its function field respectively."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.14",
+      "body": "Let $S$ be a scheme ... then it also lifts to a morphism ...",
+      "proof": "Exactly the same argument as ... gives the desired point on ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.15",
+      "body": "Suppose that a linearly reductive and special group ... has a $k$-point.",
+      "proof": "... For ... we can apply ... which lifts to a $k$-point of ... by the special assumption."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.16",
+      "body": "Let ... be a reductive group ... In particular ...",
+      "proof": "Let ... which exhibits the triviality of ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.17",
+      "body": "Let ... be a special affine group scheme ... and suppose that the geometric stabilizer groups are reductive groups ...",
+      "proof": "Let ... is also trivial and since $H$ is special ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.18",
+      "body": "Unirationality specializes along DVRs ... with reductive geometric stabilizer with tame Weyl group.",
+      "proof": "... If ... is unirational ... is unirational."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.19",
+      "body": "Let $R$ be a DVR ... In particular, the central fiber is irreducible and of multiplicity $n$.",
+      "proof": "The $K$-moduli stack ... is totally ramified of order $n$ ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "1.20",
+      "body": "Let $R$ be a DVR ... is semi-log canonical and $Y_0$ has multiplicity $n$.",
+      "proof": "... For the moduli of boundary ... log canonical singularities ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.1",
+      "body": "Let ... be an algebraic stack ... group scheme over $U$."
+    },
+    {
+      "kind": "definition",
+      "number": "2.2",
+      "body": "Let ... be a smooth separated group .. is a reductive (resp. linearly reductive, a torus) $B$-group."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.3",
+      "body": "Let ... be a reductive group over a tame algebraic stack ... there is an equivalnce ...",
+      "proof": "Note that ... For this, we may look ... locally, where we can assume ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.4",
+      "body": "Let ... be an algebraic stack ... but not noetherian for $n>1$."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.5",
+      "body": "Let $G$ be a reductive group ... maximal torus of $G$ defined over $k$.",
+      "proof": "If $G$ is a torus ... which is fixed by ..."
+    },
+    {
+      "kind": "remark",
+      "number": "2.6",
+      "body": "The proof ... for some $r$."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.7",
+      "body": "Let $R$ be a henselian DVR ... is a maximum torus.",
+      "proof": "For any map of algebraic stacks ... particular nonempty."
+    },
+    {
+      "kind": "definition",
+      "number": "2.8",
+      "body": "A $G$-torsor over ... is the classifying stack of ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.9",
+      "body": "Let ... be a gerbe as above ... and call ... a ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.10",
+      "body": "Let ... be a gerbe over an algebraic stack ... and form ... such that ...",
+      "proof": "Since $U$ is connected ... group scheme"
+    },
+    {
+      "kind": "lemma",
+      "number": "3.1",
+      "body": "Let ... Then there is a one parameter subgroup ... exists and belongs to the unique closed orbit of $V$.",
+      "proof": "For perfect fields ... As belonging to the closed orbit can be checked after a separable field extensions, then $z$ is also in the closed orbit of $V$, as desired."
+    },
+    {
+      "kind": "proposition",
+      "number": "3.2",
+      "body": "Let $R$ be a DVR ... Then ... extends to a section over some root stack ...",
+      "proof": "We first prove that there is a map ... over the closed point of Spec $R$ by ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.3",
+      "body": "Let $R$ be a DVR with generic point ... the closed point ... maps to a polystable point in ...",
+      "proof": "Let ... be the polystable point ... Then any point on the last exceptional divisor we extract will map to the polystable point of ..."
+    },
+    {
+      "kind": "definition",
+      "number": "4.1",
+      "body": "Let ... be a reductive group over a stack ... coprime to the characteristic of $k$"
+    },
+    {
+      "kind": "theorem",
+      "number": "4.2",
+      "body": "Let $R$ be a henselian DVR with fraction field ... with a further root stack.",
+      "proof": "From ... is trivialized after replacing ... by a further root stack."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.4",
+      "body": "Let ... be a tame regular algebraic stack ... is torsion",
+      "proof": "We first prove ... descends to $X$."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.5",
+      "body": "Let $R$ be a henselian DVR ... is also a root stack of a henselian DVR such that ...",
+      "proof": "Let $p$ be the residue characteristic ... not this fiber product is a root stack over ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.6",
+      "body": "Let ... be a finite and ... multiplication by ...",
+      "proof": "As $p$ is finite ... again commutes with base change."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.7",
+      "body": "Let $R$ be a henselian DVR ... is torsion for ...",
+      "proof": "From ... is a sheaf."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.8",
+      "body": "Let $R$ be the root stack of the spectrum ... we can extend ...",
+      "proof": "First observe ... and its image ... is the desired extension $x$."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.9",
+      "body": "Let $R$ be the root stack of a henselian DVR $R$ ... is trivial.",
+      "proof": "Let ... be the class representing ... Thus also ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.10",
+      "body": "Let $R$ be a henselian DVR ... with a further root stack.",
+      "proof": "In the special case ... to a section ... as required."
+    },
+    {
+      "kind": "remark",
+      "number": "4.11",
+      "body": "In the special case of a gerbe ... is bounded by the order of $S$."
+    },
+    {
+      "kind": "remark",
+      "number": "5.1",
+      "body": "In fact ... extends to an ... point of $V$."
+    }
+  ]
+}

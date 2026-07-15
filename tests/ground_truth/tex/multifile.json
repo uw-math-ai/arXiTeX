@@ -1,0 +1,32 @@
+{
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Statements split across \\input files; \\numberwithin per-section resets; nested align.",
+  "tex_source": "tests/fixtures/multifile",
+  "statements": [
+    {
+      "kind": "proposition",
+      "ref": "1.1",
+      "note": null,
+      "label": "prop:even",
+      "body": "The sum of two even integers in $\\mathbb{Z}$ is even.",
+      "proof": null
+    },
+    {
+      "kind": "theorem",
+      "ref": "1.1",
+      "note": null,
+      "label": "thm:prelim",
+      "body": "Every integer $n \\in \\mathbb{Z}$ can be written as $n = 2q + r$ with $r \\in \\{0, 1\\}$.",
+      "proof": null
+    },
+    {
+      "kind": "theorem",
+      "ref": "2.1",
+      "note": "Key identity",
+      "label": "thm:key",
+      "body": "For all $a, b \\in \\mathbb{Z}$ the following identity holds: \\begin{align} (a + b)^2 = a^2 + 2ab + b^2. \\end{align}",
+      "proof": "Expand the product $(a + b)(a + b)$ and collect like terms."
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+# Parser eval
+
+Score a parser's **output** against ground truth, so you can see which configs
+fail and where. Ground truth is authored by a human today; the `model` field
+leaves room for an LLM to author it later.
+
+## This is not a test suite
+
+The repo tests two different things, and they are kept separate:
+
+| | What | How you run it |
+|---|---|---|
+| **Parser tests** | Does the parser *work*? API, focus/validation guards, fallback chains, LLM response handling. | `pytest` — ordinary `tests/test_*.py`. Nothing to do with ground truth. |
+| **Parser eval** (this package) | Is the parser's *output* right? | `python -m eval.run` — a CLI that prints results. Never asserts, never fails. |
+
+Output quality is a measurement you look at, not a boolean. So it lives behind a
+CLI you point at a parser config, not in `pytest`.
+
+## Layout
+
+```
+tests/
+  eval/                 # this package: comparison engine + CLI
+  ground_truth/
+    tex/                # a local .tex file/folder  -> exhaustive check (offline)
+    pdf/                # a real arXiv paper        -> lenient check (downloads)
+```
+
+## The two modes
+
+| | `tex` | `pdf` |
+|---|---|---|
+| Source | local `.tex` file/folder (`tex_source`) | arXiv paper (`arxiv_id`) |
+| Ground truth | the **full expected parse** | only what's **visible in the PDF** |
+| Checked | `kind`, `ref`, `note`, `label`, full `body`, `proof` | `kind`, `body`, plus `number`/`proof` *if recorded* |
+| Purpose | catch runtime bugs in a parser | catch phantoms, misses, misnumbering |
+
+Both align parsed statements to ground truth **by body content** — never by
+number, so a misnumbered statement still aligns and the bad number is flagged.
+Unmatched parsed statements are phantoms (FP); unmatched ground truth are misses
+(FN). A *terribly wrong body* fails to align and shows up as a phantom + a miss.
+
+## Ground-truth format
+
+### `pdf/<arxiv_id>.json` — what a reader sees
+
+`body` and `proof` are **elided transcriptions**: write what you see and put
+`...` wherever you skipped content. Only the literal text between ellipses is
+compared, math-insensitively, so small transcription slips degrade the score
+rather than failing outright.
+
+```json
+{
+  "arxiv_id": "2507.08642",
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Uses tikz",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.3",
+      "body": "Let $R$ and $K$ be as above and let ... is a further root stack.",
+      "proof": "When $R$ is henselian ... yields the required extension."
+    },
+    { "kind": "remark", "number": "1.4", "body": "The above theorem is the first step ..." }
+  ]
+}
+```
+
+- `kind` — required, always checked (case-insensitive).
+- `body` — required, always checked (elided pattern).
+- `number` — checked **only if present**. Omit to ignore.
+- `proof` — checked **only if present**: asserts the parser found a proof whose
+  text matches. Omit to ignore.
+
+Anything not recorded is ignored, so you only transcribe what you can see.
+
+### `tex/<name>.json` — the full expected parse
+
+`statements` is a list of literal `arxitex.Statement` objects; **every** field is
+compared (bodies via a normalization that absorbs benign spacing differences
+between the regex and tex engines).
+
+```json
+{
+  "tex_source": "tests/fixtures/simple",
+  "model": "human",
+  "statements": [
+    { "kind": "theorem", "ref": "1.2", "note": "Nonnegativity", "label": "thm:main",
+      "body": "For every $x \\in \\mathbb{R}^n$ ...", "proof": "Immediate from ..." }
+  ]
+}
+```
+
+## Running
+
+Run from `tests/` so the `eval` package is importable. The parser flags are the
+same as the real `arxitex` CLI, so configuring the eval feels like parsing:
+
+```bash
+cd tests
+
+python -m eval.run --mode pdf -m regex               # regex vs real papers
+python -m eval.run --mode tex  -m tex -m regex       # fallback chain vs fixtures
+python -m eval.run --mode tex  -m tex --engine pdflatex
+python -m eval.run --mode pdf -m regex --only 2507.08642
+python -m eval.run --mode pdf -m regex --out results.txt   # also save a .txt
+```
+
+| Flag | Meaning |
+|---|---|
+| `--mode {pdf,tex}` | which ground truth to score against (default `pdf`) |
+| `-m/--method` | `regex`, `tex`, or `llm`; repeat for a fallback chain (default `tex regex`) |
+| `--engine` | TeX engine for the `tex` method |
+| `--model` / `--api-key` | for the `llm` method |
+| `--timeout` | max seconds per parse |
+| `--only` | score just these ground-truth files, by name |
+| `--source ID=PATH` | parse a local copy instead of downloading |
+| `--out FILE` | also write the printed results to a `.txt` |
+
+`pdf` papers are downloaded from arXiv; `tex` ones are parsed locally.
+
+## Authoring new ground truth
+
+1. Open the paper (`https://arxiv.org/pdf/<id>`).
+2. Walk the statements in order. For each, record `kind`, the printed `number`,
+   and an elided `body` (and `proof`, if the paper gives one) — `...` for
+   anything you skip.
+3. Save as `ground_truth/pdf/<id>.json` with `model: "human"`.
+4. `python -m eval.run --mode pdf -m regex --only <id>`.
+
+The engine (`compare.py`, `normalize.py`) is pure and deterministic and is
+unit-tested offline by `tests/test_eval.py`. This package sits under `tests/` and
+is **not** shipped in the `arxitex` wheel.

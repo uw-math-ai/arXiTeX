@@ -1,0 +1,32 @@
+{
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "\\declaretheorem with a sibling counter and numbered=no.",
+  "tex_source": "tests/fixtures/thmtools.tex",
+  "statements": [
+    {
+      "kind": "theorem",
+      "ref": "1.1",
+      "note": null,
+      "label": "thm:t1",
+      "body": "Every bounded monotone sequence of real numbers converges to a finite limit.",
+      "proof": null
+    },
+    {
+      "kind": "corollary",
+      "ref": "1.2",
+      "note": null,
+      "label": "cor:c1",
+      "body": "A bounded monotone sequence is Cauchy.",
+      "proof": null
+    },
+    {
+      "kind": "remark",
+      "ref": null,
+      "note": null,
+      "label": null,
+      "body": "This remark is declared with numbered=no and must have no reference number.",
+      "proof": null
+    }
+  ]
+}

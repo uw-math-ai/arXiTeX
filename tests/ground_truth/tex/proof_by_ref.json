@@ -1,0 +1,24 @@
+{
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Proof attached by \\ref, not adjacency: a lemma sits between the theorem and its proof.",
+  "tex_source": "tests/fixtures/proof_by_ref",
+  "statements": [
+    {
+      "kind": "theorem",
+      "ref": "1",
+      "note": null,
+      "label": "thm:key",
+      "body": "The square of any odd integer is odd.",
+      "proof": "Write the odd integer as $2k + 1$; its square is $4k^2 + 4k + 1$, which is odd."
+    },
+    {
+      "kind": "lemma",
+      "ref": "1",
+      "note": null,
+      "label": "lem:filler",
+      "body": "This lemma sits between the theorem and its proof to prevent adjacency matching.",
+      "proof": null
+    }
+  ]
+}

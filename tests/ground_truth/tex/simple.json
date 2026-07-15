@@ -1,0 +1,48 @@
+{
+  "model": "human",
+  "date": "2026-07-15",
+  "note": "Section-based numbering; lemma/definition share the theorem counter; unnumbered remark (\\newtheorem*); proof adjacent to its theorem; user macros expanded.",
+  "tex_source": "tests/fixtures/simple",
+  "statements": [
+    {
+      "kind": "definition",
+      "ref": "1.1",
+      "note": null,
+      "label": "def:norm",
+      "body": "A \\emph{norm} on $\\mathbb{R}^n$ is a function $\\left\\lVert \\cdot \\right\\rVert : \\mathbb{R}^n \\to \\mathbb{R}$ that is positive-definite, homogeneous, and satisfies the triangle inequality.",
+      "proof": null
+    },
+    {
+      "kind": "theorem",
+      "ref": "1.2",
+      "note": "Nonnegativity",
+      "label": "thm:main",
+      "body": "For every $x \\in \\mathbb{R}^n$ we have $\\left\\lVert x \\right\\rVert \\geq 0$, with equality iff $x = 0$.",
+      "proof": "Immediate from positive-definiteness in Definition~\\ref{def:norm}."
+    },
+    {
+      "kind": "lemma",
+      "ref": "1.3",
+      "note": null,
+      "label": "lem:aux",
+      "body": "There exists $y \\in \\mathbb{R}^n$ with $\\left\\lVert y \\right\\rVert > 0$ whenever $n \\geq 1$.",
+      "proof": null
+    },
+    {
+      "kind": "theorem",
+      "ref": "2.1",
+      "note": null,
+      "label": null,
+      "body": "A second numbered theorem, appearing in the second section.",
+      "proof": null
+    },
+    {
+      "kind": "remark",
+      "ref": null,
+      "note": null,
+      "label": null,
+      "body": "This unnumbered remark should carry no reference number.",
+      "proof": null
+    }
+  ]
+}

@@ -20,20 +20,26 @@ def connect_proofs(statements: List[Statement]):
         if proof.kind != "proof":
             continue
 
-        matched = False
-
+        # A proof's note may name several statements ("Proof of Theorem 1.5 and
+        # Corollary 1.6"); collect every label it resolves.
+        targets = []
         if proof.note:
             for m in _REF_RE.finditer(proof.note):
                 content = m.group(1) or m.group(2)
-                if content:
-                    statement_idx = label_to_idx.get(content.strip())
-                    if statement_idx is not None and statement_idx != proof_idx:
-                        statements[statement_idx].proof = proof.body
-                        matched = True
-                break
+                if not content:
+                    continue
+                statement_idx = label_to_idx.get(content.strip())
+                if statement_idx is not None:
+                    targets.append(statement_idx)
 
-        if not matched:
-            if proof_idx > 0 and statements[proof_idx - 1].kind in THEOREM_KINDS:
-                statements[proof_idx - 1].proof = proof.body
+        # A proof that names nothing belongs to the statement it follows.
+        if not targets and proof_idx > 0 and statements[proof_idx - 1].kind in THEOREM_KINDS:
+            targets.append(proof_idx - 1)
+
+        # Attach to every statement the proof covers, but never overwrite: a
+        # statement keeps the first proof it is given.
+        for statement_idx in targets:
+            if statements[statement_idx].proof is None:
+                statements[statement_idx].proof = proof.body
 
     return [statement for statement in statements if statement.kind != "proof"]

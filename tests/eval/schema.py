@@ -1,0 +1,95 @@
+"""
+Ground-truth schema for the parser eval.
+
+Ground truth is organized by what the parser is tested against, with different
+strictness for each:
+
+    tests/ground_truth/tex/   a local .tex file/folder. The ground truth is the
+                              *full expected parse* — every field of every
+                              statement (kind, ref, note, label, full body,
+                              proof). Comparison is exhaustive, to catch runtime
+                              bugs in a parser. Backed by ``arxitex.Statement``.
+
+    tests/ground_truth/pdf/   a real arXiv paper. The ground truth is only what
+                              a reader can see in the rendered PDF — kind, ref,
+                              and a few math-free body words. Everything else is
+                              absent and the eval ignores it.
+
+Each file is one paper, authored once (by a human today; the ``model`` field
+leaves room for an LLM later) and reused to score any parser configuration.
+"""
+
+from __future__ import annotations
+
+import datetime
+from pathlib import Path
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
+from arxitex.types import Statement
+
+
+class _Meta(BaseModel):
+    model: str = "human"                   # who authored it: "human" or an LLM id
+    date: Optional[datetime.date] = None   # when produced (ISO YYYY-MM-DD)
+    note: Optional[str] = None             # freeform paper note, e.g. "uses tikz"
+
+
+class TexGroundTruth(_Meta):
+    """Full expected parse of a local .tex file/folder (exhaustive check)."""
+
+    tex_source: str                        # repo-relative path to the .tex file/folder
+    statements: List[Statement] = Field(default_factory=list)  # exact, in order
+
+    @property
+    def name(self) -> str:
+        return self.tex_source
+
+
+class PdfStatement(BaseModel):
+    """One statement as visible in a rendered PDF (limited, lenient check).
+
+    ``body`` and ``proof`` are *elided transcriptions*: write what you see, using
+    ``...`` wherever you skipped content. Only the literal text between the
+    ellipses is compared (math-insensitively), so::
+
+        "Let $R$ and $K$ be as above and let ... is a further root stack."
+
+    asserts the body starts with "Let R and K be as above and let", ends with
+    "is a further root stack", and may contain anything in between.
+
+    ``kind`` and ``body`` are required and always checked. ``number`` and
+    ``proof`` are checked only when given — absent means "not recorded, ignore".
+    """
+
+    kind: str                              # "theorem", "lemma", ... (case-insensitive)
+    number: Optional[str] = None           # printed number, e.g. "1.2"; omit to ignore
+    body: str                              # elided transcription; "..." = skipped content
+    proof: Optional[str] = None            # elided proof transcription; omit to ignore
+
+
+class PdfGroundTruth(_Meta):
+    """Reader-visible ground truth for a real arXiv paper (lenient check)."""
+
+    arxiv_id: str                          # e.g. "2401.01234"
+    statements: List[PdfStatement] = Field(default_factory=list)  # in reading order
+
+    @property
+    def name(self) -> str:
+        return self.arxiv_id
+
+
+_MODELS = {"tex": TexGroundTruth, "pdf": PdfGroundTruth}
+
+
+def load_ground_truth(mode: str, directory: str | Path) -> dict[str, "TexGroundTruth | PdfGroundTruth"]:
+    """Load every ``*.json`` under *directory* (recursively), keyed by file stem.
+
+    *mode* is ``"tex"`` or ``"pdf"`` and selects which schema to validate against.
+    """
+    cls = _MODELS[mode]
+    out: dict[str, TexGroundTruth | PdfGroundTruth] = {}
+    for path in sorted(Path(directory).rglob("*.json")):
+        out[path.stem] = cls.model_validate_json(path.read_text(encoding="utf-8"))
+    return out
