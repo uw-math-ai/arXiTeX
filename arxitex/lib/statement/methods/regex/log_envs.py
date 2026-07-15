@@ -84,19 +84,66 @@ _NEWCMD_RE = re.compile(
     r"\s*\{",                                                      # opening { of body
 )
 
-# \def\name{body}  (no-arg form only)
+# \def\name<params>{body}.  Group 2 captures the parameter text between the
+# name and the opening brace (empty, "#1#2...", or a delimited pattern).
 _DEF_RE = re.compile(
-    r"\\(?:e|g|x)?def\s*(\\[\w@]+)\s*\{",
+    r"\\(?:e|g|x)?def\s*(\\[\w@]+)\s*([^{]*?)\s*\{",
 )
+
+# \let\new\old  or  \let\new=\old  — makes \new an alias for \old.
+_LET_RE = re.compile(
+    r"\\let\s*(\\[\w@]+)\s*=?\s*(\\[\w@]+)",
+)
+
+# \csname foo\endcsname  — a control sequence built from literal text.
+_CSNAME_RE = re.compile(
+    r"\\csname\s*([\w@ ]*?)\s*\\endcsname",
+)
+
+
+def _normalize_csname(text: str) -> str:
+    """
+    Rewrite ``\\csname foo\\endcsname`` → ``\\foo`` so that downstream macro
+    collection and expansion see an ordinary control sequence.  Only the
+    simple literal-name form is handled; names assembled at runtime (e.g. via
+    nested macros) are left untouched.
+    """
+    def _sub(m: re.Match) -> str:
+        name = m.group(1).replace(" ", "")
+        return "\\" + name if name else m.group(0)
+
+    return _CSNAME_RE.sub(_sub, text)
+
+
+def _def_nargs(params: str) -> Optional[int]:
+    """
+    Interpret a ``\\def`` parameter text.  Returns the argument count for the
+    undelimited case ("" → 0, "#1#2" → 2), or ``None`` for delimited parameter
+    patterns (e.g. ``#1;#2.``), which regex expansion can't safely reproduce.
+    """
+    params = params.strip()
+    if not params:
+        return 0
+    # Anything left after removing the #1..#n tokens means the parameters are
+    # delimited by literal text — unsupported.
+    if re.sub(r"#\d", "", params).strip():
+        return None
+    nums = re.findall(r"#(\d)", params)
+    if nums != [str(i) for i in range(1, len(nums) + 1)]:
+        return None
+    return len(nums)
+
 
 def _collect_macros(tex: str) -> dict[str, tuple[int, str]]:
     """
     Return {macro_name: (nargs, body_template)} for every simple
-    \\newcommand / \\renewcommand / \\def found in *tex*.
+    \\newcommand / \\renewcommand / \\def / \\let found in *tex*.
 
-    Only zero-arg and fixed-arg (#1..#9) commands are collected.
-    Complex macros (\\def with parameter patterns) are skipped.
+    Handles zero-arg and fixed-arg (#1..#9) commands, ``\\let`` aliases, and
+    ``\\csname``-built names.  ``\\def`` with delimited parameter patterns is
+    still skipped (regex expansion can't reproduce delimiter matching).
     """
+    tex = _normalize_csname(tex)
     macros: dict[str, tuple[int, str]] = {}
 
     def _extract_body(tex: str, start: int) -> str:
@@ -121,16 +168,23 @@ def _collect_macros(tex: str) -> dict[str, tuple[int, str]]:
         body  = _extract_body(tex, m.end())
         macros[name] = (nargs, body)
 
-    # \def\name{body}  — zero-arg only (skip if next char after name is #)
+    # \def\name<params>{body} — undelimited params only; delimited defs skipped.
     for m in _DEF_RE.finditer(tex):
-        name = m.group(1)
-        # peek: if the char right before '{' is # this is a parameterised \def
-        before_brace = tex[m.start():m.end()].rstrip()
-        if "#" in tex[m.end() - 5 : m.end()]:
+        name  = m.group(1)
+        nargs = _def_nargs(m.group(2))
+        if nargs is None:
             continue
         body = _extract_body(tex, m.end())
         if name not in macros:          # \newcommand takes priority
-            macros[name] = (0, body)
+            macros[name] = (nargs, body)
+
+    # \let\new\old — alias to an already-collected macro.  Processed last, in
+    # source order, so chains like \let\a\b; \let\c\a resolve. If the target is
+    # a primitive we don't know, we leave \new undefined (safer than guessing).
+    for m in _LET_RE.finditer(tex):
+        name, target = m.group(1), m.group(2)
+        if name not in macros and target in macros:
+            macros[name] = macros[target]
 
     return macros
 
@@ -144,6 +198,8 @@ def _expand_macros(text: str, macros: dict[str, tuple[int, str]]) -> str:
     """
     if not macros or not text:
         return text
+
+    text = _normalize_csname(text)
 
     # Build one alternation pattern sorted longest-first to avoid prefix clashes
     sorted_names = sorted(macros.keys(), key=len, reverse=True)

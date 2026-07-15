@@ -86,3 +86,33 @@ def test_context_capture():
     )
     # at least one statement gets surrounding context populated
     assert any(s.pre_context or s.post_context for s in res.statements)
+
+
+def test_collect_macros_let_def_csname():
+    from arxitex.lib.statement.methods.regex.log_envs import (
+        _collect_macros,
+        _expand_macros,
+    )
+
+    src = r"""
+    \newcommand{\field}{\mathbb{F}}
+    \def\ring#1{\field[#1]}
+    \let\F\field
+    \let\Ring\ring
+    \def\weird#1;#2.{DELIMITED}
+    \let\prim\relax
+    """
+    macros = _collect_macros(src)
+
+    # parameterised \def is collected with its arg count
+    assert macros["\\ring"] == (1, r"\field[#1]")
+    # \let aliases copy the target's definition
+    assert macros["\\F"] == macros["\\field"]
+    assert macros["\\Ring"] == macros["\\ring"]
+    # delimited \def and \let to an unknown primitive are left out
+    assert "\\weird" not in macros
+    assert "\\prim" not in macros
+
+    # aliases and \csname both expand
+    assert _expand_macros(r"\F and \Ring{x}", macros) == r"\mathbb{F} and \field[x]"
+    assert _expand_macros(r"\csname field\endcsname", macros) == r"\mathbb{F}"
