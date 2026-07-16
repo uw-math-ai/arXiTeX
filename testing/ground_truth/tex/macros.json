@@ -1,8 +1,8 @@
 {
-  "model": "human",
+  "annotator": "anthropic/claude-opus-4-8",
   "date": "2026-07-15",
-  "note": "Zero-/multi-arg \\newcommand and \\def, including a macro defined via another macro. Body records the fully-expanded ideal.",
-  "tex_source": "tests/fixtures/macros.tex",
+  "note": "Zero-/multi-arg \\newcommand and \\def, including a macro defined via another macro. Body records the fully-expanded ideal. Snapshot of the regex parser's output, reviewed against the fixture; not an independent reading.",
+  "tex_source": "testing/fixtures/macros.tex",
   "statements": [
     {
       "kind": "theorem",

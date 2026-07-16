@@ -5,16 +5,16 @@ This is a measurement tool, not a test — it always exits 0 and just reports.
 Configure the parser exactly as you would to actually parse (same flags as the
 ``arxitex`` CLI), then look at what it got wrong.
 
-Run it from the ``tests/`` directory so the ``eval`` package is importable:
+Run it from the ``testing/`` directory so the ``eval`` package is importable:
 
-    cd tests
+    cd testing
 
     python -m eval.run --mode pdf -m regex
     python -m eval.run --mode tex  -m tex -m regex --engine pdflatex
     python -m eval.run --mode pdf -m regex --only 2507.08642
     python -m eval.run --mode pdf -m regex --out results.txt   # also save to a .txt
 
-Ground truth lives in ``tests/ground_truth/{pdf,tex}/``. ``pdf`` papers are
+Ground truth lives in ``testing/ground_truth/{pdf,tex}/``. ``pdf`` papers are
 downloaded from arXiv; ``tex`` ones are parsed from local sources.
 """
 

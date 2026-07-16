@@ -3,7 +3,7 @@ Run a parser over ground truth and collect the reports.
 
 This is the measurement layer behind ``python -m eval.run``. It never asserts —
 scoring parser *output* is a thing you look at, not a pass/fail test. (Tests for
-the parser itself are ordinary pytest files under ``tests/``.)
+the parser itself are ordinary pytest files under ``testing/``.)
 """
 
 from __future__ import annotations

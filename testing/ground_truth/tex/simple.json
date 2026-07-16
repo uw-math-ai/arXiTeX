@@ -1,8 +1,8 @@
 {
-  "model": "human",
+  "annotator": "anthropic/claude-opus-4-8",
   "date": "2026-07-15",
-  "note": "Section-based numbering; lemma/definition share the theorem counter; unnumbered remark (\\newtheorem*); proof adjacent to its theorem; user macros expanded.",
-  "tex_source": "tests/fixtures/simple",
+  "note": "Section-based numbering; lemma/definition share the theorem counter; unnumbered remark (\\newtheorem*); proof adjacent to its theorem; user macros expanded. Snapshot of the regex parser's output, reviewed against the fixture; not an independent reading.",
+  "tex_source": "testing/fixtures/simple",
   "statements": [
     {
       "kind": "definition",

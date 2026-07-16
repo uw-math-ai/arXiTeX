@@ -282,9 +282,18 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The `tests/` folder contains small, self-contained LaTeX projects (in
-`tests/fixtures/`) that double as readable examples of what each method handles —
+The `testing/` folder contains small, self-contained LaTeX projects (in
+`testing/fixtures/`) that double as readable examples of what each method handles —
 shared counters, unnumbered environments, `thmtools`, multi-file `\input`s,
 proof-by-reference, nested macros, and a no-statements paper. The `tex` tests are
 skipped automatically when no TeX engine is on `PATH`, and the `llm` tests use a
-mocked backend (no API key needed). See `tests/README.md` for details.
+mocked backend (no API key needed). See `testing/README.md` for details.
+
+`pytest` covers the parser itself. To score a parser's *output* against
+annotated ground truth, use the eval CLI — see `testing/eval/README.md`:
+
+```
+cd testing
+python -m eval.run --mode pdf -m regex          # score output vs annotations
+python -m eval.annotate 2507.08642              # LLM-annotate a paper's PDF
+```

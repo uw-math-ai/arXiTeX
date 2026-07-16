@@ -1,8 +1,8 @@
 {
-  "model": "human",
+  "annotator": "anthropic/claude-opus-4-8",
   "date": "2026-07-15",
-  "note": "\\declaretheorem with a sibling counter and numbered=no.",
-  "tex_source": "tests/fixtures/thmtools.tex",
+  "note": "\\declaretheorem with a sibling counter and numbered=no. Snapshot of the regex parser's output, reviewed against the fixture; not an independent reading.",
+  "tex_source": "testing/fixtures/thmtools.tex",
   "statements": [
     {
       "kind": "theorem",

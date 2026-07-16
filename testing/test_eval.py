@@ -4,9 +4,12 @@ Pure and offline — synthetic statements only, no parser and no network. Guards
 the harness that `test_parsers.py` relies on.
 """
 
+import pytest
+
 from arxitex.types import Statement
 
 from eval import PdfGroundTruth, TexGroundTruth, pattern_score, score_pdf, score_tex
+from eval.annotate import _extract_json
 from eval.normalize import norm_body, to_words
 
 
@@ -91,7 +94,7 @@ def test_pdf_reports_phantoms_and_misses():
 # --- tex mode: every field is checked --------------------------------------
 
 def _tex_gt(*statements):
-    return TexGroundTruth(tex_source="tests/fixtures/simple", statements=list(statements))
+    return TexGroundTruth(tex_source="testing/fixtures/simple", statements=list(statements))
 
 
 def test_tex_checks_every_field():
@@ -102,6 +105,42 @@ def test_tex_checks_every_field():
     report = score_tex(parsed, gt)
     assert report.tp == 1
     assert {d.field for d in report.matched[0].diffs} == {"kind", "ref", "note", "label", "proof"}
+
+
+# --- annotate: lenient JSON extraction from a model response ---------------
+
+def test_extract_json_accepts_a_bare_object():
+    assert _extract_json('{"note": "x", "statements": []}') == {"note": "x", "statements": []}
+
+
+def test_extract_json_unwraps_a_markdown_fence():
+    assert _extract_json('```json\n{"note": "x", "statements": []}\n```')["note"] == "x"
+
+
+def test_extract_json_ignores_prose_around_the_object():
+    content = 'Sure! Here is the annotation:\n{"note": "x", "statements": []}\nHope that helps.'
+    assert _extract_json(content)["note"] == "x"
+
+
+def test_extract_json_raises_when_there_is_no_object():
+    with pytest.raises(ValueError, match="no JSON object"):
+        _extract_json("I could not read that paper, sorry.")
+
+
+def test_annotated_response_validates_into_ground_truth():
+    # the shape the prompt asks the model for must satisfy the schema
+    data = _extract_json(
+        '{"note": "uses tikz", "statements": ['
+        '{"kind": "theorem", "number": "1.1", "body": "Let ... be a space ... is proper.",'
+        ' "proof": "We first assume ... concludes the argument."},'
+        '{"kind": "remark", "number": "1.2", "body": "We can factor ... representable."}]}'
+    )
+    gt = PdfGroundTruth(arxiv_id="2507.08642", annotator="anthropic/claude-opus-4-8",
+                        note=data["note"], statements=data["statements"])
+    assert gt.annotator == "anthropic/claude-opus-4-8"
+    assert len(gt.statements) == 2
+    assert gt.statements[0].proof is not None
+    assert gt.statements[1].proof is None      # omitted -> ignored by the eval
 
 
 def test_tex_passes_when_the_parse_matches_exactly():

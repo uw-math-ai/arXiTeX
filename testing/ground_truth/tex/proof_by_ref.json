@@ -1,8 +1,8 @@
 {
-  "model": "human",
+  "annotator": "anthropic/claude-opus-4-8",
   "date": "2026-07-15",
-  "note": "Proof attached by \\ref, not adjacency: a lemma sits between the theorem and its proof.",
-  "tex_source": "tests/fixtures/proof_by_ref",
+  "note": "Proof attached by \\ref, not adjacency: a lemma sits between the theorem and its proof. Snapshot of the regex parser's output, reviewed against the fixture; not an independent reading.",
+  "tex_source": "testing/fixtures/proof_by_ref",
   "statements": [
     {
       "kind": "theorem",

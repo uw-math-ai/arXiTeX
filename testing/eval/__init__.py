@@ -3,12 +3,12 @@ Parser eval: score arXiTeX parser configurations against ground truth.
 
 This scores parser *output* — it is a measurement tool, driven from the CLI::
 
-    cd tests && python -m eval.run --mode pdf -m regex
+    cd testing && python -m eval.run --mode pdf -m regex
 
 It is deliberately *not* a pytest suite: tests for the parser itself live in
-ordinary ``tests/test_*.py`` files and have nothing to do with ground truth.
+ordinary ``testing/test_*.py`` files and have nothing to do with ground truth.
 
-Ground truth lives under ``tests/ground_truth/``, split by what the parser is
+Ground truth lives under ``testing/ground_truth/``, split by what the parser is
 scored against, with different strictness for each:
 
     tex/   a local .tex file/folder. Ground truth is the *full expected parse* —

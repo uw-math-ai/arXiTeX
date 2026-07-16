@@ -71,6 +71,6 @@ include = ["arxitex*"]
 "arxitex.lib.statement.methods.tex" = ["*.sty"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-# Put tests/ on sys.path so tests can import the `eval` support package.
-pythonpath = ["tests"]
+testpaths = ["testing"]
+# Put testing/ on sys.path so tests can import the `eval` support package.
+pythonpath = ["testing"]
