@@ -116,10 +116,20 @@ There are three parsing methods, from fastest to most capable:
 The `"tex"` method uses [**tectonic**](https://tectonic-typesetting.github.io/)
 by default (a single self-contained binary that fetches only the packages a
 paper needs). To use an existing TeX Live install instead, pass
-`Tex(engine="pdflatex")`. The `"llm"` method is provider-agnostic via
-[litellm](https://github.com/BerriAI/litellm): pass any model string, e.g.
-`Llm(model="anthropic/claude-sonnet-5")` or `Llm(model="openai/gpt-4o")`, with
-the provider's API key in the environment (or `api_key=...`).
+`Tex(engine="pdflatex")`.
+
+The `"llm"` method works with **any OpenAI-compatible host** — it uses the
+`openai` SDK pointed at a `base_url`, so Nebius (the default), Together, Groq,
+OpenRouter, a local vLLM/Ollama, or OpenAI itself all work. Model names are the
+host's own, not provider-prefixed:
+
+```python
+arx.Llm()                                              # Nebius + DeepSeek-V4-Pro
+arx.Llm(model="Qwen/Qwen3.5-397B-A17B")                # another Nebius model
+arx.Llm(base_url="https://api.openai.com/v1", model="gpt-4o")
+```
+
+The key comes from `api_key=...`, else `NEBIUS_API_KEY`, else `OPENAI_API_KEY`.
 
 ```python
 import arxitex as arx

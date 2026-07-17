@@ -26,7 +26,7 @@ examples of what each method handles. Each is valid, compilable LaTeX:
 - `test_regex.py` — the dependency-free `regex` method over every fixture.
 - `test_tex.py` — the real-TeX `tex` method (auto-skipped when `tectonic` is not
   on `PATH`), including a parity check against `regex`.
-- `test_llm.py` — the `llm` method with a **mocked** litellm backend (no network
+- `test_llm.py` — the `llm` method with a **mocked** OpenAI-compatible backend (no network
   or API key needed), plus the chunker and response parser.
 - `test_parser.py` — `Parser` behaviors: source auto-detection, fallback chains,
   `focus`, `validation`, and input guards.

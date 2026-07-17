@@ -36,14 +36,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# LLM parsing method (provider-agnostic via litellm)
+# LLM parsing method: any OpenAI-compatible host (Nebius by default) via the
+# openai SDK pointed at a --base-url.
 llm = [
-  "litellm"
+  "openai"
 ]
 
 dev = [
   "pytest",
-  "litellm"
+  "openai",
+  "pymupdf",       # PDF text extraction for the annotate CLI
+  "python-dotenv"  # .env loading for the eval CLIs
 ]
 
 slogan = [

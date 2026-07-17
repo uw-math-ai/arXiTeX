@@ -1,17 +1,24 @@
 """
-The ``llm`` parsing method: provider-agnostic statement extraction via litellm.
+The ``llm`` parsing method: statement extraction via any OpenAI-compatible API.
 
 The paper is flattened, split into section-aware chunks that fit the model's
 context, and each chunk is sent to the model with a strict JSON schema. Results
-are merged in document order and de-duplicated. litellm is an optional
-dependency (``pip install 'arxitex[llm]'``); the model string and API key follow
-litellm conventions (e.g. ``"anthropic/claude-sonnet-5"`` +
-``ANTHROPIC_API_KEY``, ``"openai/gpt-4o"`` + ``OPENAI_API_KEY``).
+are merged in document order and de-duplicated.
+
+Uses the ``openai`` SDK (optional: ``pip install 'arxitex[llm]'``) pointed at a
+``base_url``, so any OpenAI-compatible host works — Nebius (the default),
+Together, Groq, Fireworks, OpenRouter, a local vLLM/Ollama, or OpenAI itself.
+Model names are the host's own (e.g. ``"deepseek-ai/DeepSeek-V4-Pro"``), not
+provider-prefixed.
+
+The key is taken from ``api_key`` if given, else ``NEBIUS_API_KEY``, else
+``OPENAI_API_KEY``. This module never reads a ``.env`` file — a library should
+not mutate the process environment; load it in your entry point if you want that.
 """
 
 import json
+import os
 import re
-from pathlib import Path
 from typing import List, Optional, Set
 
 from arxitex.types import Statement
@@ -19,7 +26,10 @@ from arxitex.lib.statement.methods.base import ParseContext, Method
 from arxitex.lib.statement.methods.regex.flatten import flatten_tex
 from arxitex.lib.statement.extract_context import strip_comments
 
-_DEFAULT_MODEL = "anthropic/claude-sonnet-5"
+_DEFAULT_BASE_URL = "https://api.studio.nebius.com/v1"
+_DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Pro"
+_API_KEY_ENVS = ("NEBIUS_API_KEY", "OPENAI_API_KEY")
+
 _DOC_BEGIN_RE = re.compile(r"\\begin\s*\{document\}")
 _SECTION_RE = re.compile(r"(?=\\(?:sub)*section\*?\s*[\{\[])")
 _JSON_ARRAY_RE = re.compile(r"\[.*\]", re.DOTALL)
@@ -81,7 +91,9 @@ def _parse_response(content: str, kinds: Set[str]) -> List[Statement]:
     if not m:
         return []
     try:
-        items = json.loads(m.group(0))
+        # strict=False: models routinely emit literal newlines inside strings
+        # when echoing LaTeX, which strict JSON rejects.
+        items = json.loads(m.group(0), strict=False)
     except json.JSONDecodeError:
         return []
 
@@ -104,20 +116,40 @@ def _parse_response(content: str, kinds: Set[str]) -> List[Statement]:
     return out
 
 
+def _make_client(api_key: Optional[str], base_url: str, max_retries: int = 2):
+    """Build an OpenAI-SDK client for an OpenAI-compatible host.
+
+    *max_retries* is the SDK's own exponential backoff over connection errors,
+    429s and 5xx (shared hosts return 529 "overloaded" under load). Raise it for
+    long multi-call jobs, where one transient blip would otherwise discard every
+    call made so far.
+    """
+    try:
+        from openai import OpenAI
+    except ImportError as e:
+        raise ImportError(
+            "The 'llm' method requires the openai package. Install it with: "
+            "pip install 'arxitex[llm]'"
+        ) from e
+
+    key = api_key or next((os.environ[v] for v in _API_KEY_ENVS if os.environ.get(v)), None)
+    if not key:
+        raise ValueError(
+            "No API key for the 'llm' method. Pass api_key=..., or set one of: "
+            + ", ".join(_API_KEY_ENVS)
+        )
+    return OpenAI(base_url=base_url, api_key=key, max_retries=max_retries)
+
+
 def llm_parse(
     ctx: ParseContext,
     model: str = _DEFAULT_MODEL,
     api_key: Optional[str] = None,
+    base_url: str = _DEFAULT_BASE_URL,
     max_chunk_chars: int = 30_000,
     temperature: float = 0.0,
 ) -> List[Statement]:
-    try:
-        import litellm
-    except ImportError as e:
-        raise ImportError(
-            "The 'llm' method requires litellm. Install it with: "
-            "pip install 'arxitex[llm]'"
-        ) from e
+    client = _make_client(api_key, base_url)
 
     flat = ctx.flat_tex or flatten_tex(ctx.paper_dir, ctx.main_file, ignore_errors=True)
     m = _DOC_BEGIN_RE.search(flat)
@@ -128,15 +160,13 @@ def llm_parse(
     for chunk in _chunk(body_src, max_chunk_chars):
         if not chunk.strip():
             continue
-        kwargs = {"api_key": api_key} if api_key else {}
-        resp = litellm.completion(
+        resp = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": _build_prompt(chunk, ctx.kinds)},
             ],
             temperature=temperature,
-            **kwargs,
         )
         content = resp.choices[0].message.content or ""
         for stmt in _parse_response(content, ctx.kinds):
@@ -150,15 +180,17 @@ def llm_parse(
 
 
 class Llm(Method):
-    """Parse with an LLM (provider-agnostic via litellm).
+    """Parse with an LLM on any OpenAI-compatible host.
 
     Parameters
     ----------
     model : str
-        A litellm model string, e.g. ``"anthropic/claude-sonnet-5"`` or
-        ``"openai/gpt-4o"``.
+        The host's own model name, e.g. ``"deepseek-ai/DeepSeek-V4-Pro"``.
     api_key : str, optional
-        API key. If omitted, the provider's usual environment variable is used.
+        API key. If omitted, ``NEBIUS_API_KEY`` then ``OPENAI_API_KEY`` are tried.
+    base_url : str
+        The OpenAI-compatible endpoint (default: Nebius AI Studio). Point this at
+        Together, Groq, OpenRouter, a local vLLM/Ollama, or OpenAI as needed.
     max_chunk_chars : int
         Maximum characters of LaTeX per model call.
     temperature : float
@@ -172,11 +204,13 @@ class Llm(Method):
         self,
         model: str = _DEFAULT_MODEL,
         api_key: Optional[str] = None,
+        base_url: str = _DEFAULT_BASE_URL,
         max_chunk_chars: int = 30_000,
         temperature: float = 0.0,
     ):
         self.model = model
         self.api_key = api_key
+        self.base_url = base_url
         self.max_chunk_chars = max_chunk_chars
         self.temperature = temperature
 
@@ -185,6 +219,7 @@ class Llm(Method):
             ctx,
             model=self.model,
             api_key=self.api_key,
+            base_url=self.base_url,
             max_chunk_chars=self.max_chunk_chars,
             temperature=self.temperature,
         )

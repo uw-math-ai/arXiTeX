@@ -5,7 +5,7 @@ Parsing methods and helpers to resolve a user-facing method spec into concrete
 Public method classes:
     - :class:`Regex` — fast, dependency-free pattern matching.
     - :class:`Tex`   — real TeX engine (tectonic/pdflatex), macros expanded natively.
-    - :class:`Llm`   — provider-agnostic LLM extraction via litellm.
+    - :class:`Llm`   — LLM extraction via any OpenAI-compatible host.
 """
 
 from typing import List, Set, Union

@@ -7,7 +7,8 @@ Examples
     arxitex path/to/paper/ -o statements.jsonl
     arxitex 2109.06451 -m tex -m regex          # fallback chain
     arxitex 2109.06451 -m tex --engine pdflatex
-    arxitex 2109.06451 -m llm --model openai/gpt-4o
+    arxitex 2109.06451 -m llm --model deepseek-ai/DeepSeek-V4-Pro
+    arxitex 2109.06451 -m llm --base-url https://api.openai.com/v1 --model gpt-4o
 """
 
 import sys
@@ -23,7 +24,7 @@ def _build_methods(args):
         if name == "tex":
             methods.append(Tex(engine=args.engine, timeout=args.timeout))
         elif name == "llm":
-            methods.append(Llm(model=args.model, api_key=args.api_key))
+            methods.append(Llm(model=args.model, api_key=args.api_key, base_url=args.base_url))
         else:
             methods.append(name)
     return methods
@@ -38,8 +39,9 @@ def main() -> None:
         help="Parsing method: regex, tex, or llm. Repeat for a fallback chain. Default: tex then regex.",
     )
     ap.add_argument("--engine", default="tectonic", help="TeX engine for the 'tex' method (tectonic or pdflatex).")
-    ap.add_argument("--model", default="anthropic/claude-sonnet-5", help="litellm model string for the 'llm' method.")
-    ap.add_argument("--api-key", default=None, help="API key for the 'llm' method (else uses the provider's env var).")
+    ap.add_argument("--model", default="deepseek-ai/DeepSeek-V4-Pro", help="Model name for the 'llm' method (as the host names it).")
+    ap.add_argument("--base-url", default="https://api.studio.nebius.com/v1", help="OpenAI-compatible endpoint for the 'llm' method.")
+    ap.add_argument("--api-key", default=None, help="API key for the 'llm' method (else NEBIUS_API_KEY, then OPENAI_API_KEY).")
     ap.add_argument("--kinds", nargs="+", default=None, help="Statement kinds to keep (default: broad preset).")
     ap.add_argument("--focus", default="all", help="all | statements | preamble | bibliography")
     ap.add_argument("--validation", default="paper", help="paper | statement | none")

@@ -39,7 +39,7 @@ def _build_methods(args) -> list:
         if name == "tex":
             methods.append(Tex(engine=args.engine, timeout=args.timeout))
         elif name == "llm":
-            methods.append(Llm(model=args.model, api_key=args.api_key))
+            methods.append(Llm(model=args.model, api_key=args.api_key, base_url=args.base_url))
         else:
             methods.append(name)
     return methods
@@ -104,10 +104,12 @@ def main(argv=None) -> None:
                          "Default: tex then regex.")
     ap.add_argument("--engine", default="tectonic",
                     help="TeX engine for the 'tex' method (tectonic or pdflatex).")
-    ap.add_argument("--model", default="anthropic/claude-sonnet-5",
-                    help="litellm model string for the 'llm' method.")
+    ap.add_argument("--model", default="deepseek-ai/DeepSeek-V4-Pro",
+                    help="Model name for the 'llm' method (as the host names it).")
+    ap.add_argument("--base-url", default="https://api.studio.nebius.com/v1",
+                    help="OpenAI-compatible endpoint for the 'llm' method.")
     ap.add_argument("--api-key", default=None,
-                    help="API key for the 'llm' method (else uses the provider's env var).")
+                    help="API key for the 'llm' method (else NEBIUS_API_KEY, then OPENAI_API_KEY).")
     ap.add_argument("--timeout", type=int, default=None, help="Max seconds per parse.")
     ap.add_argument("--only", nargs="+", default=None,
                     help="Only score these ground-truth files (by name, e.g. 2507.08642).")
