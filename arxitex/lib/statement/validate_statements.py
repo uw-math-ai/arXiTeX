@@ -34,9 +34,15 @@ def _validate_body(statement: Statement):
             f"Statement is likely truncated: `{body}`"
         ))
 
+    # A trailing ":" is NOT a truncation signal: a statement can only end on a
+    # colon when \end{env} immediately follows it, i.e. the colon introduces
+    # content *outside* the environment (a displayed equation, or a following
+    # theorem). That is a complete statement. The markers below, by contrast,
+    # cannot end a complete statement — a dangling conjunction, an unbalanced
+    # opener, or a cut-off relation.
     if clean_body.endswith((
-        " and", " or", "such that", " where", " let", " then", "for all", 
-        "(", "[", "{", ",", ":", ";", "=", "<", "%")
+        " and", " or", "such that", " where", " let", " then", "for all",
+        "(", "[", "{", ",", ";", "=", "<", "%")
     ):
         raise ValueError(format_error(
             ParseError.VALIDATION,
