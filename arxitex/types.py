@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
 from enum import Enum
 from dataclasses import dataclass
@@ -33,7 +33,7 @@ class Statement(BaseModel):
     note : str, optional
         The statement's note, usually a title or caption.
     label : str, optional
-        The statement's ``\\label{...}`` key, used to reference it.
+        The statement's first ``\\label{...}`` key, used to reference it.
     body : str
         The statement's LaTeX body, with user macros expanded where possible.
     proof : str, optional
@@ -54,6 +54,10 @@ class Statement(BaseModel):
     proof: Optional[str] = None
     pre_context: Optional[str] = None
     post_context: Optional[str] = None
+    # Every \label on the statement (a restated theorem may carry several), so a
+    # proof that references any of them can be connected. Runtime-only: excluded
+    # from serialization to keep the output schema unchanged. `label` is the first.
+    labels: List[str] = Field(default_factory=list, exclude=True, repr=False)
 
 
 class ValidationLevel(str, Enum):

@@ -110,8 +110,10 @@ def _record_to_statement(rec: dict, thm_defs: dict, flat_tex: str) -> Optional[S
         kind = env
 
     raw_body = rec.get("BODY") or ""
-    label_m = _LABEL_RE.search(raw_body)
-    label = label_m.group(1).strip() if label_m else None
+    # Keep every \label (a restated theorem may carry several) so a proof can
+    # reference any one of them.
+    labels = [l.strip() for l in _LABEL_RE.findall(raw_body)]
+    label = labels[0] if labels else None
     body = _LABEL_RE.sub("", raw_body)
     body = expand_user_macros(body, flat_tex)
     body = _WS_RE.sub(" ", body).strip()
@@ -127,7 +129,7 @@ def _record_to_statement(rec: dict, thm_defs: dict, flat_tex: str) -> Optional[S
     if ref is not None:
         ref = ref.strip() or None
 
-    return Statement(kind=kind, ref=ref, note=note, label=label, body=body, proof=None)
+    return Statement(kind=kind, ref=ref, note=note, label=label, labels=labels, body=body, proof=None)
 
 
 def tex_parse(

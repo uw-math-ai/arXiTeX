@@ -96,6 +96,7 @@ def parse(
                 ref=env.ref,
                 note=env.note,
                 label=env.label,
+                labels=env.labels,
                 body=env.body,
                 proof=None,
                 pre_context=_pre_context(clean, env.begin_pos, context, stmt_end_pat),
@@ -110,6 +111,7 @@ def parse(
             ref=env.ref,
             note=env.note,
             label=env.label,
+            labels=env.labels,
             body=env.body,
             proof=None,
         )

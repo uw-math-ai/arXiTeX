@@ -65,6 +65,14 @@ def test_validation_none_keeps_everything():
     assert res.statements
 
 
+def test_labels_field_is_not_serialized():
+    # the internal all-labels field must not leak into the JSONL output schema
+    from arxitex.types import Statement
+    s = Statement(kind="theorem", label="a", labels=["a", "b"], body="A theorem body.")
+    assert "labels" not in s.model_dump_json()
+    assert "labels" not in s.model_dump()
+
+
 def test_no_statements_raises():
     # a paper with nothing to parse must fail loudly rather than return []
     with pytest.raises(RuntimeError):

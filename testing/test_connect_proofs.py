@@ -4,8 +4,9 @@ from arxitex.lib.statement.connect_proofs import connect_proofs
 from arxitex.types import Statement
 
 
-def _stmt(kind, label=None, note=None, body="body"):
-    return Statement(kind=kind, label=label, note=note, body=body)
+def _stmt(kind, label=None, note=None, body="body", labels=None):
+    return Statement(kind=kind, label=label, note=note, body=body,
+                     labels=labels if labels is not None else ([label] if label else []))
 
 
 def test_proof_follows_its_statement_by_adjacency():
@@ -77,3 +78,41 @@ def test_proof_after_a_non_theorem_attaches_to_nothing():
         _stmt("proof", body="Dangling."),
     ])
     assert out[0].proof is None
+
+
+def test_proof_connects_via_a_statements_second_label():
+    # a restated theorem carries two \labels; the proof references the second.
+    # Mirrors Theorem 1.13 of arXiv:2402.10823.
+    out = connect_proofs([
+        _stmt("theorem", label="thm:intro-name",
+              labels=["thm:intro-name", "thm:body-name"]),
+        _stmt("proof", note=r"Proof of \Cref{thm:body-name}", body="The argument."),
+    ])
+    by_label = {s.label: s for s in out}
+    assert by_label["thm:intro-name"].proof == "The argument."
+
+
+def test_adjacency_walks_back_past_a_remark_to_the_corollary():
+    # a remark wedged between a corollary and its (note-less) proof must not
+    # block the connection. Mirrors Corollary 5.1 of arXiv:2402.10823.
+    out = connect_proofs([
+        _stmt("corollary", label="cor:x"),
+        _stmt("remark", label="rmk:aside"),
+        _stmt("proof", body="Hence the result."),
+    ])
+    by_label = {s.label: s for s in out}
+    assert by_label["cor:x"].proof == "Hence the result."
+    assert by_label["rmk:aside"].proof is None
+
+
+def test_adjacency_does_not_walk_back_past_a_definition():
+    # only commentary (remark/note/...) is skipped; a definition is substantive,
+    # so a proof after one does not reach back to an earlier theorem
+    out = connect_proofs([
+        _stmt("theorem", label="thm:a"),
+        _stmt("definition", label="def:b"),
+        _stmt("proof", body="Unrelated."),
+    ])
+    by_label = {s.label: s for s in out}
+    assert by_label["thm:a"].proof is None
+    assert by_label["def:b"].proof is None
