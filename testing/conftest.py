@@ -25,8 +25,8 @@ requires_tectonic = pytest.mark.skipif(
 
 
 def by_label(statements):
-    """Index statements by their \\label key."""
-    return {s.label: s for s in statements if s.label}
+    """Index statements by each of their \\label keys."""
+    return {label: s for s in statements for label in s.labels}
 
 
 def by_kind(statements):

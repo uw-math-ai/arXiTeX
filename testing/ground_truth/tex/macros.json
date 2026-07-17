@@ -8,7 +8,9 @@
       "kind": "theorem",
       "ref": "1",
       "note": null,
-      "label": "thm:macros",
+      "labels": [
+        "thm:macros"
+      ],
       "body": "For a nonconstant $f \\in \\mathbb{F}[x]$ we have $\\operatorname{deg} \\mathbb{F}[x] \\geq 1$ over the field $\\mathbb{F}$.",
       "proof": null
     }

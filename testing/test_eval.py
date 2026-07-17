@@ -120,13 +120,13 @@ def _tex_gt(*statements):
 
 
 def test_tex_checks_every_field():
-    gt = _tex_gt(Statement(kind="theorem", ref="1.1", note="Nice", label="thm:a",
+    gt = _tex_gt(Statement(kind="theorem", ref="1.1", note="Nice", labels=["thm:a"],
                            body="Alpha beta gamma delta.", proof="Because."))
-    parsed = [Statement(kind="lemma", ref="9.9", note=None, label="thm:b",
+    parsed = [Statement(kind="lemma", ref="9.9", note=None, labels=["thm:b"],
                         body="Alpha beta gamma delta.", proof=None)]
     report = score_tex(parsed, gt)
     assert report.tp == 1
-    assert {d.field for d in report.matched[0].diffs} == {"kind", "ref", "note", "label", "proof"}
+    assert {d.field for d in report.matched[0].diffs} == {"kind", "ref", "note", "labels", "proof"}
 
 
 # --- annotate: lenient JSON extraction from a model response ---------------
@@ -286,9 +286,9 @@ def test_annotated_response_validates_into_ground_truth():
 
 
 def test_tex_passes_when_the_parse_matches_exactly():
-    s = Statement(kind="theorem", ref="1.1", label="thm:a", body=r"$\mathbb{R}^n$ is fine.")
+    s = Statement(kind="theorem", ref="1.1", labels=["thm:a"], body=r"$\mathbb{R}^n$ is fine.")
     gt = _tex_gt(s)
     # same content, benign tex-engine spacing -> still clean
-    parsed = [Statement(kind="theorem", ref="1.1", label="thm:a", body=r"$\mathbb{R} ^n$ is fine.")]
+    parsed = [Statement(kind="theorem", ref="1.1", labels=["thm:a"], body=r"$\mathbb{R} ^n$ is fine.")]
     report = score_tex(parsed, gt)
     assert report.clean

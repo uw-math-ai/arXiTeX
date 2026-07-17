@@ -32,8 +32,9 @@ class Statement(BaseModel):
         The statement's number as it appears in the document (e.g. "1.1", "A.2").
     note : str, optional
         The statement's note, usually a title or caption.
-    label : str, optional
-        The statement's first ``\\label{...}`` key, used to reference it.
+    labels : list of str
+        Every ``\\label{...}`` key on the statement, in source order (a restated
+        theorem may carry several; most have one; some have none).
     body : str
         The statement's LaTeX body, with user macros expanded where possible.
     proof : str, optional
@@ -49,15 +50,11 @@ class Statement(BaseModel):
     kind: str
     ref: Optional[str] = None
     note: Optional[str] = None
-    label: Optional[str] = None
+    labels: List[str] = Field(default_factory=list)
     body: str
     proof: Optional[str] = None
     pre_context: Optional[str] = None
     post_context: Optional[str] = None
-    # Every \label on the statement (a restated theorem may carry several), so a
-    # proof that references any of them can be connected. Runtime-only: excluded
-    # from serialization to keep the output schema unchanged. `label` is the first.
-    labels: List[str] = Field(default_factory=list, exclude=True, repr=False)
 
 
 class ValidationLevel(str, Enum):

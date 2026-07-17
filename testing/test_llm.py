@@ -61,7 +61,7 @@ def test_llm_deduplicates_across_chunks(monkeypatch):
     res = arx.Parser(method="llm", focus="statements", validation="none").parse(
         path=FIXTURE_PATHS["multifile"]
     )
-    assert len([s for s in res.statements if s.label == "t"]) == 1
+    assert len([s for s in res.statements if s.labels == ["t"]]) == 1
 
 
 def test_llm_defaults_to_nebius_and_an_open_model():

@@ -5,7 +5,7 @@ from arxitex.types import Statement
 
 
 def _stmt(kind, label=None, note=None, body="body", labels=None):
-    return Statement(kind=kind, label=label, note=note, body=body,
+    return Statement(kind=kind, note=note, body=body,
                      labels=labels if labels is not None else ([label] if label else []))
 
 
@@ -24,7 +24,7 @@ def test_proof_attaches_by_reference_across_an_intervening_statement():
         _stmt("lemma", label="lem:filler"),
         _stmt("proof", note=r"Proof of Theorem \ref{thm:key}", body="Odd squared is odd."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["thm:key"].proof == "Odd squared is odd."
     assert by_label["lem:filler"].proof is None   # adjacency must not win over the ref
 
@@ -36,7 +36,7 @@ def test_one_proof_covering_several_statements_attaches_to_all_of_them():
         _stmt("corollary", label="cor:main"),
         _stmt("proof", note=r"Proof of \Cref{prop:main} and \Cref{cor:main}", body="Shared argument."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["prop:main"].proof == "Shared argument."
     assert by_label["cor:main"].proof == "Shared argument."
 
@@ -59,7 +59,7 @@ def test_a_multi_reference_proof_does_not_clobber_an_existing_proof():
         _stmt("corollary", label="cor:b"),
         _stmt("proof", note=r"Proof of \Cref{thm:a} and \Cref{cor:b}", body="Shared argument."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["thm:a"].proof == "Dedicated proof."
     assert by_label["cor:b"].proof == "Shared argument."
 
@@ -88,7 +88,7 @@ def test_proof_connects_via_a_statements_second_label():
               labels=["thm:intro-name", "thm:body-name"]),
         _stmt("proof", note=r"Proof of \Cref{thm:body-name}", body="The argument."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["thm:intro-name"].proof == "The argument."
 
 
@@ -100,7 +100,7 @@ def test_adjacency_walks_back_past_a_remark_to_the_corollary():
         _stmt("remark", label="rmk:aside"),
         _stmt("proof", body="Hence the result."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["cor:x"].proof == "Hence the result."
     assert by_label["rmk:aside"].proof is None
 
@@ -113,6 +113,6 @@ def test_adjacency_does_not_walk_back_past_a_definition():
         _stmt("definition", label="def:b"),
         _stmt("proof", body="Unrelated."),
     ])
-    by_label = {s.label: s for s in out}
+    by_label = {lab: s for s in out for lab in s.labels}
     assert by_label["thm:a"].proof is None
     assert by_label["def:b"].proof is None

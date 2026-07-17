@@ -37,7 +37,7 @@ def connect_proofs(statements: List[Statement]):
     for idx, statement in enumerate(statements):
         if statement.kind == "proof":
             continue
-        for label in (statement.labels or ([statement.label] if statement.label else [])):
+        for label in statement.labels:
             label_to_idx.setdefault(label, idx)
 
     for proof_idx, proof, in enumerate(statements):

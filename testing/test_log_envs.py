@@ -28,7 +28,7 @@ def test_space_named_env_advances_the_shared_counter():
     \end{document}
     """
     defs = _parse_theorem_defs(src)
-    by_label = {e.label: e for e in log_envs(src) if e.label and e.raw_env in defs}
+    by_label = {lab: e for e in log_envs(src) if e.raw_env in defs for lab in e.labels}
     assert by_label["d1"].ref == "1"
     assert by_label["s1"].ref == "2"
     assert by_label["s2"].ref == "3"
@@ -49,6 +49,6 @@ def test_starred_env_names_still_match():
     \end{document}
     """
     defs = _parse_theorem_defs(src)
-    by_label = {e.label: e for e in log_envs(src) if e.label and e.raw_env in defs}
+    by_label = {lab: e for e in log_envs(src) if e.raw_env in defs for lab in e.labels}
     assert by_label["t"].ref == "1"
     assert by_label["r"].ref is None

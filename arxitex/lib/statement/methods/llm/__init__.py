@@ -105,11 +105,12 @@ def _parse_response(content: str, kinds: Set[str]) -> List[Statement]:
         kind = (it.get("kind") or "").strip().lower()
         if not body or not kind:
             continue
+        label = (it.get("label") or "").strip()
         out.append(Statement(
             kind=kind,
             ref=(it.get("ref") or None),
             note=(it.get("note") or None),
-            label=(it.get("label") or None),
+            labels=[label] if label else [],
             body=body,
             proof=(it.get("proof") or None),
         ))
@@ -170,7 +171,7 @@ def llm_parse(
         )
         content = resp.choices[0].message.content or ""
         for stmt in _parse_response(content, ctx.kinds):
-            key = (stmt.kind, stmt.label, re.sub(r"\s+", " ", stmt.body).strip()[:120])
+            key = (stmt.kind, tuple(stmt.labels), re.sub(r"\s+", " ", stmt.body).strip()[:120])
             if key in seen:
                 continue
             seen.add(key)

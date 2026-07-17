@@ -155,7 +155,7 @@ def _tex_diffs(g: Statement, p: Statement) -> List[FieldDiff]:
         ("kind", g.kind, p.kind, _norm_kind),
         ("ref", g.ref, p.ref, _norm_ref),
         ("note", g.note, p.note, norm_body),
-        ("label", g.label, p.label, lambda x: x),
+        ("labels", g.labels, p.labels, lambda x: x),
         ("body", g.body, p.body, norm_body),
         ("proof", g.proof, p.proof, norm_body),
     ]

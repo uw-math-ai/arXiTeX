@@ -32,7 +32,7 @@ testing/
 |---|---|---|
 | Source | local `.tex` file/folder (`tex_source`) | arXiv paper (`arxiv_id`) |
 | Ground truth | the **full expected parse** | only what's **visible in the PDF** |
-| Checked | `kind`, `ref`, `note`, `label`, full `body`, `proof` | `kind`, `body`, plus `number`/`proof` *if recorded* |
+| Checked | `kind`, `ref`, `note`, `labels`, full `body`, `proof` | `kind`, `body`, plus `number`/`proof` *if recorded* |
 | Purpose | catch runtime bugs in a parser | catch phantoms, misses, misnumbering |
 
 Both align parsed statements to ground truth **by body content** — never by
@@ -89,7 +89,7 @@ between the regex and tex engines).
   "tex_source": "testing/fixtures/simple",
   "model": "human",
   "statements": [
-    { "kind": "theorem", "ref": "1.2", "note": "Nonnegativity", "label": "thm:main",
+    { "kind": "theorem", "ref": "1.2", "note": "Nonnegativity", "labels": ["thm:main"],
       "body": "For every $x \\in \\mathbb{R}^n$ ...", "proof": "Immediate from ..." }
   ]
 }

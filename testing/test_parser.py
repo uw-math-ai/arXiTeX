@@ -65,12 +65,14 @@ def test_validation_none_keeps_everything():
     assert res.statements
 
 
-def test_labels_field_is_not_serialized():
-    # the internal all-labels field must not leak into the JSONL output schema
+def test_statement_serializes_labels_not_label():
+    # `labels` is the single source of truth; the old singular `label` is gone
     from arxitex.types import Statement
-    s = Statement(kind="theorem", label="a", labels=["a", "b"], body="A theorem body.")
-    assert "labels" not in s.model_dump_json()
-    assert "labels" not in s.model_dump()
+    s = Statement(kind="theorem", labels=["a", "b"], body="A theorem body.")
+    dumped = s.model_dump()
+    assert dumped["labels"] == ["a", "b"]
+    assert "label" not in dumped
+    assert '"labels"' in s.model_dump_json()
 
 
 def test_no_statements_raises():

@@ -15,7 +15,7 @@ Each Environment has:
     env        - raw environment name (e.g. "thm")
     ref        - counter string (e.g. "2.3") or None for unnumbered envs
     note       - optional argument, e.g. [Fermat's Last Theorem], macros expanded
-    label      - \\label{...} key or None
+    labels     - all \\label{...} keys, in source order (possibly empty)
     body       - inner content, \\label stripped, macros expanded
     begin_line - 1-based line number of \\begin{env}
     end_line   - 1-based line number of \\end{env}
@@ -35,15 +35,14 @@ class Environment(BaseModel):
     raw_env:    str  # original env name as it appears in \begin{...}, before display-name mapping
     ref:        Optional[str] = None
     note:       Optional[str] = None
-    label:      Optional[str] = None       # first \label (for reference/compat)
-    labels:     list[str] = []             # all \labels on the env, in order
+    labels:     list[str] = []             # all \labels on the env, in source order
     body:       str
     begin_line: int
     end_line:   int
     begin_pos:  int  # char offset of \begin{env} in the comment-stripped source
     end_pos:    int  # char offset just after \end{env} in the comment-stripped source
 
-    @field_validator("env", "raw_env", "ref", "note", "label", "body", mode="before")
+    @field_validator("env", "raw_env", "ref", "note", "body", mode="before")
     @classmethod
     def strip_nul(cls, v: object) -> object:
         return v.replace("\x00", "") if isinstance(v, str) else v
@@ -773,7 +772,6 @@ def log_envs(tex: str) -> list[Environment]:
             # A statement may carry several \labels (e.g. a theorem restated in a
             # later section). Keep them all so a proof can reference any one.
             labels   = [l.strip() for l in _LABEL_RE.findall(raw_body)]
-            label    = labels[0] if labels else None
             body     = re.sub(r'\s+', ' ', _expand_macros(_LABEL_RE.sub("", raw_body), macros)).strip()
 
             env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
@@ -783,7 +781,6 @@ def log_envs(tex: str) -> list[Environment]:
                 raw_env    = open_env,
                 ref        = ref,
                 note       = note,
-                label      = label,
                 labels     = labels,
                 body       = body,
                 begin_line = begin_line,
