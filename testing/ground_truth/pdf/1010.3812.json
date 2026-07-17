@@ -77,7 +77,7 @@
       "proof": "Given a ball ... shows that with probability ... The success probability is at least ..."
     },
     {
-      "kind": "theorem",
+      "kind": "lemma",
       "number": "14",
       "body": "There exist a constant ... such that the probability ... getting split before it lands up in a cell of radius ...",
       "proof": "The only bad event for us is the one ... since the second summation is just a constant."

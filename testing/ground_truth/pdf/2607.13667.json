@@ -1,0 +1,47 @@
+{
+  "arxiv_id": "2607.13667",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-17",
+  "note": "Statistics theory paper, separated proofs, no section-based numbers",
+  "statements": [
+    {
+      "kind": "definition",
+      "number": "1",
+      "body": "Let ... be a metric pace ... in the last displayed equation."
+    },
+    {
+      "kind": "proposition",
+      "number": "1",
+      "body": "For any ... there exists a distribution with empty ... centre of mass.",
+      "proof": "Let ... take ... a complete orthonormal sequence ... do not exist in this case."
+    },
+    {
+      "kind": "theorem",
+      "number": "1",
+      "body": "Let ... be a probability measure on ... that is, minimisers of ...",
+      "proof": "Let ... We extend the domain of ... and hence ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2",
+      "body": "Let ... and pick any ... has multiple minimisers.",
+      "proof": "The existence follows from ... This completes the proof."
+    },
+    {
+      "kind": "algorithm",
+      "number": "1",
+      "body": "Take an arbitrary ... "
+    },
+    {
+      "kind": "proposition",
+      "number": "2",
+      "body": "The ... obtained in .. is the ... of mass of ...",
+      "proof": "We use the notation introducted in ... Notice that ... belongs to ... since ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1",
+      "body": "A simple indicator of non-uniqueness of the sample ... mass is not unique."
+    }
+  ]
+}
