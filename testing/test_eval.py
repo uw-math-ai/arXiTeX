@@ -8,7 +8,14 @@ import pytest
 
 from arxitex.types import Statement
 
-from eval import PdfGroundTruth, TexGroundTruth, pattern_score, score_pdf, score_tex
+from eval import (
+    PdfGroundTruth,
+    PdfStatement,
+    TexGroundTruth,
+    pattern_score,
+    score_pdf,
+    score_tex,
+)
 from eval.annotate import _extract_json
 from eval.normalize import norm_body, to_words
 
@@ -65,6 +72,21 @@ def test_pdf_flags_a_wrong_number_when_recorded():
     parsed = [Statement(kind="theorem", ref="9.9", body="Every bounded sequence of reals converges.")]
     report = score_pdf(parsed, gt)
     assert [d.field for d in report.matched[0].diffs] == ["number"]
+
+
+def test_blank_proof_or_number_is_treated_as_not_recorded():
+    # a vision model emitting `"proof": ""` must not read as "a proof exists",
+    # or the eval fails parsers that correctly found none
+    s = PdfStatement.model_validate(
+        {"kind": "theorem", "number": "  ", "body": "Alpha ... omega.", "proof": ""}
+    )
+    assert s.proof is None
+    assert s.number is None
+
+    gt = _pdf_gt(kind="theorem", body="Alpha ... omega.", proof="")
+    parsed = [Statement(kind="theorem", ref="1.1", body="Alpha beta gamma omega.")]
+    report = score_pdf(parsed, gt)
+    assert report.clean, "blank proof must not be scored as a missing proof"
 
 
 def test_pdf_flags_a_missing_proof_when_recorded():
@@ -125,6 +147,126 @@ def test_extract_json_ignores_prose_around_the_object():
 def test_extract_json_raises_when_there_is_no_object():
     with pytest.raises(ValueError, match="no JSON object"):
         _extract_json("I could not read that paper, sorry.")
+
+
+def test_extract_json_tolerates_raw_newlines_inside_strings():
+    # models routinely emit literal newlines in transcribed text; strict JSON
+    # rejects them ("Invalid control character"), so the extractor must not.
+    content = '{"note": "line one\nline two", "statements": []}'
+    assert _extract_json(content)["note"] == "line one\nline two"
+
+
+def test_extract_json_tolerates_raw_newlines_inside_a_fence():
+    content = '```json\n{"note": "a\nb", "statements": []}\n```'
+    assert _extract_json(content)["note"] == "a\nb"
+
+
+# --- annotate: page batching + merge -------------------------------------
+
+def test_batches_cover_every_page_and_overlap_by_one():
+    from eval.annotate import _batches
+
+    for n_pages in range(1, 20):
+        for per_call in range(2, 6):
+            ranges = _batches(n_pages, per_call, overlap=1)
+            covered = {p for first, last in ranges for p in range(first, last)}
+            assert covered == set(range(n_pages)), (n_pages, per_call)
+            assert all(last - first <= per_call for first, last in ranges)
+            # consecutive batches share exactly one page, so nothing straddling
+            # a page break is only ever seen split
+            for (a_first, a_last), (b_first, b_last) in zip(ranges, ranges[1:]):
+                assert b_first < a_last, (n_pages, per_call)
+
+
+def test_batches_single_page_and_short_paper():
+    from eval.annotate import _batches
+
+    assert _batches(1, 4) == [(0, 1)]
+    assert _batches(3, 4) == [(0, 3)]
+
+
+def test_batches_rejects_zero_pages_per_call():
+    from eval.annotate import _batches
+
+    with pytest.raises(ValueError, match="pages_per_call"):
+        _batches(5, 0)
+
+
+def test_merge_drops_overlap_duplicates_by_number():
+    from eval.annotate import _merge
+
+    a = [PdfStatement(kind="theorem", number="1.1", body="alpha ... omega"),
+         PdfStatement(kind="lemma", number="1.2", body="beta ... psi")]
+    b = [PdfStatement(kind="lemma", number="1.2", body="beta ... psi"),   # overlap dup
+         PdfStatement(kind="corollary", number="1.3", body="gamma ... chi")]
+    merged = _merge([a, b])
+    assert [s.number for s in merged] == ["1.1", "1.2", "1.3"]
+
+
+def test_merge_dedupes_unnumbered_statements_by_body():
+    from eval.annotate import _merge
+
+    s = PdfStatement(kind="remark", body="This unnumbered remark says something.")
+    merged = _merge([[s], [s]])
+    assert len(merged) == 1
+
+
+def test_merge_keeps_a_proof_only_a_later_batch_could_see():
+    # the theorem is on page 4 (batch 1) but its proof starts on page 5, so only
+    # batch 2 sees the proof at all — dropping the duplicate would lose it
+    from eval.annotate import _merge
+
+    early = PdfStatement(kind="theorem", number="1.5", body="Let $R$ ... is proper.")
+    late = PdfStatement(kind="theorem", number="1.5", body="Let $R$ ... is proper.",
+                        proof="We first assume ... hence the claim.")
+    merged = _merge([[early], [late]])
+    assert len(merged) == 1
+    assert merged[0].proof == "We first assume ... hence the claim."
+
+
+def test_merge_prefers_a_finished_proof_over_one_that_runs_off():
+    # batch 1 saw the proof start but no QED marker (trails off); batch 2 saw it
+    # end. The finished transcription wins.
+    from eval.annotate import _merge
+
+    runs_off = PdfStatement(kind="theorem", number="2.1", body="Alpha ... omega.",
+                            proof="We first assume ...")
+    finished = PdfStatement(kind="theorem", number="2.1", body="Alpha ... omega.",
+                            proof="We first assume ... which concludes the argument.")
+    assert _merge([[runs_off], [finished]])[0].proof.endswith("concludes the argument.")
+    # order must not matter
+    assert _merge([[finished], [runs_off]])[0].proof.endswith("concludes the argument.")
+
+
+def test_merge_prefers_a_body_seen_whole_over_a_tail_only_view():
+    from eval.annotate import _merge
+
+    tail_only = PdfStatement(kind="lemma", number="3.1", body="... and therefore it is flat.")
+    whole = PdfStatement(kind="lemma", number="3.1", body="Let $X$ be smooth ... it is flat.")
+    assert _merge([[tail_only], [whole]])[0].body.startswith("Let $X$")
+
+
+def test_completeness_ranks_run_off_transcriptions():
+    from eval.annotate import _completeness
+
+    assert _completeness("Let X ... it is flat.") == 2      # both ends seen
+    assert _completeness("Let X be a scheme ...") == 1      # runs past the page
+    assert _completeness("... it is flat.") == 1            # started earlier
+    assert _completeness("... middle of a proof ...") == 0  # neither end seen
+    assert _completeness(None) == -1
+
+
+def test_a_run_off_proof_still_matches_a_parser_that_found_the_whole_proof():
+    # the payoff: a proof the model could only half-see must not fail the parser
+    gt = _pdf_gt(kind="theorem", number="1.1", body="Alpha ... omega.",
+                 proof="We first assume the ring is henselian ...")
+    parsed = [Statement(
+        kind="theorem", ref="1.1", body="Alpha beta gamma omega.",
+        proof="We first assume the ring is henselian, and then reduce to that case "
+              "by a limit argument, which concludes the proof.",
+    )]
+    report = score_pdf(parsed, gt)
+    assert report.clean, "a run-off proof transcription must score leniently"
 
 
 def test_annotated_response_validates_into_ground_truth():

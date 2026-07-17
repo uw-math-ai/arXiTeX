@@ -305,5 +305,5 @@ annotated ground truth, use the eval CLI — see `testing/eval/README.md`:
 ```
 cd testing
 python -m eval.run --mode pdf -m regex          # score output vs annotations
-python -m eval.annotate 2507.08642              # LLM-annotate a paper's PDF
+python -m eval.annotate 2507.08642              # vision-LLM-annotate a paper's pages
 ```

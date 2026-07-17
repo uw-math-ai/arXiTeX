@@ -26,7 +26,7 @@ import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from arxitex.types import Statement
 
@@ -68,6 +68,17 @@ class PdfStatement(BaseModel):
     number: Optional[str] = None           # printed number, e.g. "1.2"; omit to ignore
     body: str                              # elided transcription; "..." = skipped content
     proof: Optional[str] = None            # elided proof transcription; omit to ignore
+
+    @field_validator("number", "proof", mode="before")
+    @classmethod
+    def _blank_is_absent(cls, v: object) -> object:
+        """Treat "" as "not recorded", not as "recorded and empty".
+
+        LLM annotators routinely emit `"proof": ""` rather than omitting the key.
+        Left as-is, that reads as *a proof exists*, and the eval would then fail
+        any parser that (correctly) found none.
+        """
+        return None if isinstance(v, str) and not v.strip() else v
 
 
 class PdfGroundTruth(_Meta):

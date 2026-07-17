@@ -123,33 +123,48 @@ python -m eval.run --mode pdf -m regex --out results.txt   # also save a .txt
 
 `pdf` papers are downloaded from arXiv; `tex` ones are parsed locally.
 
-## Annotating a paper with an LLM
+## Annotating a paper with a vision LLM
 
-`eval.annotate` produces the same JSON a human would, by showing a strong model
-the actual PDF (as a document, so it reads the rendered paper):
+`eval.annotate` produces the same JSON a human would. It downloads the paper's
+PDF, **renders each page to an image** (PyMuPDF), and shows those to a vision
+model — so it reads the typeset page exactly as a human annotator does:
 
 ```bash
 cd testing
-export ANTHROPIC_API_KEY=sk-...          # or pass --api-key
+# NEBIUS_API_KEY is read from the repo's .env (or pass --api-key)
 
-python -m eval.annotate 2507.08642                       # -> ground_truth/pdf/2507.08642.json
-python -m eval.annotate 2507.08642 --dry-run             # print, don't write
-python -m eval.annotate 2507.08642 --model openai/gpt-5
-python -m eval.annotate 2507.08642 --text                # send extracted text, not the PDF
+python -m eval.annotate 2507.08642                        # -> ground_truth/pdf/2507.08642.json
+python -m eval.annotate 2507.08642 --max-pages 4 --dry-run  # cheap smoke test
+python -m eval.annotate 2507.08642 --model google/gemma-3-27b-it
+python -m eval.annotate 2507.08642 --dpi 200 --pages-per-call 2
 ```
 
 `annotator` is set to the model id, so LLM- and human-annotated papers stay
-distinguishable. Needs the `llm` extra (`pip install 'arxitex[llm]'`); model
-strings and key env vars follow litellm conventions.
+distinguishable. Needs the `llm` extra (`pip install 'arxitex[llm]'`) + PyMuPDF.
+
+**The model must accept images.** On Nebius that means
+`Qwen/Qwen2.5-VL-72B-Instruct` (default), `google/gemma-3-27b-it`, or
+`openbmb/MiniCPM-V-4_5`. A text-only model (DeepSeek, Llama) will fail or ignore
+the pages.
+
+**Batching and overlap.** A whole paper in one request is too many image tokens
+and too large a payload (18 pages @150dpi ≈ 8.6 MB of base64). Pages go out in
+batches of `--pages-per-call`, overlapping by **one page** so a statement
+straddling a page break is seen whole by at least one batch. Results are merged
+and de-duplicated by printed number — the run reports how many duplicates the
+overlap produced.
 
 **Existing annotations are never overwritten without `--force`** — a hand-made
 annotation is expensive and must not be clobbered by a model run.
 
 | Flag | Meaning |
 |---|---|
-| `--model` | litellm model string (default `anthropic/claude-opus-4-8`) |
-| `--api-key` | else the provider's env var |
-| `--text` | send the PDF's text layer instead of the PDF (cheaper; no document support needed) |
+| `--model` | vision model as the host names it (default `Qwen/Qwen2.5-VL-72B-Instruct`) |
+| `--base-url` | OpenAI-compatible endpoint (default Nebius) |
+| `--api-key` | else `NEBIUS_API_KEY`, then `OPENAI_API_KEY`, read from `.env` |
+| `--dpi` | render resolution (default 150; higher reads small type better, costs more) |
+| `--pages-per-call` | pages per request (default 4); batches overlap by one page |
+| `--max-pages` | only the first N pages — cheap smoke tests |
 | `--out FILE` | write elsewhere |
 | `--force` | overwrite an existing annotation |
 | `--dry-run` | print the JSON instead of writing it |
