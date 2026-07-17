@@ -41,6 +41,7 @@ STATEMENT_KINDS = {
     "fact",
     "assumption",
     "notation", "convention",
+    "algorithm"
 }
 
 #: Default method chain: real TeX engine, falling back to regex if it is
