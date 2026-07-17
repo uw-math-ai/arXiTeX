@@ -569,8 +569,11 @@ class _CounterBank:
 _BEGIN_RE = re.compile(r"\\begin\s*\{\s*([\w @]+?\*?)\s*\}")
 _END_RE   = re.compile(r"\\end\s*\{\s*([\w @]+?\*?)\s*\}")
 
-# Optional note after \begin{env}: \begin{thm}[some note]
-_NOTE_RE  = re.compile(r"^\s*\[([^\]]*)\]")
+# Optional note right after \begin{env}. The standard form is a bracketed
+# argument (\begin{thm}[Fermat]); some authors instead open the body with a
+# parenthetical (\begin{proof}(of Theorem~\ref{main})), which serves the same
+# role — so treat a leading (...) as a note too.
+_NOTE_RE  = re.compile(r"^\s*(?:\[([^\]]*)\]|\(([^)]*)\))")
 
 # \label{key}
 _LABEL_RE = re.compile(r"\\label\s*\{([^}]+)\}")
@@ -750,7 +753,7 @@ def log_envs(tex: str) -> list[Environment]:
         if kind == "begin":
             after_begin = clean[tok_end:]
             note_match  = _NOTE_RE.match(after_begin)
-            note_raw    = note_match.group(1).strip() if note_match else None
+            note_raw    = (note_match.group(1) or note_match.group(2)).strip() if note_match else None
             note        = re.sub(r'\s+', ' ', _expand_macros(note_raw, macros)).strip() if note_raw else None
             body_start  = tok_end + note_match.end() if note_match else tok_end
             # Step the counter now (at \begin time), mirroring LaTeX's behaviour.

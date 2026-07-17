@@ -94,6 +94,21 @@ def test_top_level_unlabeled_statement_gets_no_synthetic_label():
     assert thm.labels == []
 
 
+def test_leading_parenthetical_is_captured_as_a_note():
+    # some authors open a proof body with "(of Theorem ...)" instead of the
+    # bracketed [..] argument; it serves the same role, so capture it as a note.
+    src = r"""
+    \newtheorem{theorem}{Theorem}
+    \begin{document}
+    \begin{theorem}\label{thm:x}A real statement of some theorem here.\end{theorem}
+    \begin{proof}(of Theorem~\ref{thm:x}) The argument goes as follows.\end{proof}
+    \end{document}
+    """
+    proof = next(e for e in log_envs(src) if e.raw_env == "proof")
+    assert proof.note == r"of Theorem~\ref{thm:x}"
+    assert proof.body.startswith("The argument")   # the parenthetical is not in the body
+
+
 def test_starred_env_names_still_match():
     # the widened begin/end matcher must not regress starred environments
     src = r"""

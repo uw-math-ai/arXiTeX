@@ -105,6 +105,20 @@ def test_adjacency_walks_back_past_a_remark_to_the_corollary():
     assert by_label["rmk:aside"].proof is None
 
 
+def test_adjacency_skips_the_proofs_own_nested_statement():
+    # a fact restated inside the proof is spliced out and \ref'd in the proof
+    # body, so it appears just before the proof in the list even though it's
+    # part of it. Walk past it to the lemma. Mirrors arXiv:1010.3812.
+    out = connect_proofs([
+        _stmt("lemma", label="lem:main"),
+        _stmt("fact", label="fct:inner"),
+        _stmt("proof", body=r"We use the following. \ref{fct:inner} Hence the claim."),
+    ])
+    by_label = {lab: s for s in out for lab in s.labels}
+    assert by_label["lem:main"].proof is not None
+    assert by_label["fct:inner"].proof is None
+
+
 def test_adjacency_does_not_walk_back_past_a_definition():
     # only commentary (remark/note/...) is skipped; a definition is substantive,
     # so a proof after one does not reach back to an earlier theorem
