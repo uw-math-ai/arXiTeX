@@ -251,29 +251,36 @@ def _expand_macros(text: str, macros: dict[str, tuple[int, str]]) -> str:
 
 # ── theorem declarations ───────────────────────────────────────────────────────
 
+# Theorem-environment names may contain spaces (e.g.
+# \newtheorem{primary statistics}[theorem]{...}), so match more than \w for the
+# env-name argument. Whether or not such an env is later kept in the output, its
+# shared counter must still advance so the statements that follow are numbered
+# correctly.
+_ENV = r"[\w @]+?"
+
 # \newtheorem{env}{Display}
 # \newtheorem{env}[shared]{Display}
 # \newtheorem{env}{Display}[reset_level]
 _NEWTHM_RE = re.compile(
-    r"\\newtheorem\s*\{\s*(\w+)\s*\}"          # {env}
-    r"\s*(?:\[\s*(\w+)\s*\])?"                 # optional [shared_counter]
-    r"\s*\{([^}]*)\}"                          # {Display name}
-    r"\s*(?:\[\s*(\w+)\s*\])?"                 # optional [reset_level]
+    r"\\newtheorem\s*\{\s*(" + _ENV + r")\s*\}"   # {env}
+    r"\s*(?:\[\s*(" + _ENV + r")\s*\])?"          # optional [shared_counter]
+    r"\s*\{([^}]*)\}"                             # {Display name}
+    r"\s*(?:\[\s*(\w+)\s*\])?"                    # optional [reset_level]
 )
 
 # \newtheorem*{env}{Display}  — unnumbered variant
 _NEWTHM_STAR_RE = re.compile(
-    r"\\newtheorem\*\s*\{\s*(\w+)\s*\}\s*\{([^}]*)\}"
+    r"\\newtheorem\*\s*\{\s*(" + _ENV + r")\s*\}\s*\{([^}]*)\}"
 )
 
 # thmtools: \declaretheorem[options]{env}
 # options we care about: sibling=, numberlike=, numberwithin=
 _DECLARE_THM_RE = re.compile(
-    r"\\declaretheorem\s*(?:\[[^\]]*\])?\s*\{\s*(\w+)\s*\}",
+    r"\\declaretheorem\s*(?:\[[^\]]*\])?\s*\{\s*(" + _ENV + r")\s*\}",
     re.DOTALL,
 )
 _DECLARE_OPT_RE = re.compile(
-    r"\\declaretheorem\s*\[([^\]]*)\]\s*\{\s*(\w+)\s*\}",
+    r"\\declaretheorem\s*\[([^\]]*)\]\s*\{\s*(" + _ENV + r")\s*\}",
     re.DOTALL,
 )
 
@@ -290,7 +297,7 @@ _ALIASCNT_RE = re.compile(
 )
 
 # \newenvironment{name} — detects wrapper environments around aliased theorems
-_NEWENV_RE = re.compile(r"\\newenvironment\s*\{\s*(\w+)\s*\}")
+_NEWENV_RE = re.compile(r"\\newenvironment\s*\{\s*(" + _ENV + r")\s*\}")
 
 def _parse_theorem_defs(
     tex: str,
@@ -556,8 +563,8 @@ class _CounterBank:
 # Main scanner
 ###############################################################################
 
-_BEGIN_RE = re.compile(r"\\begin\s*\{\s*(\w+\*?)\s*\}")
-_END_RE   = re.compile(r"\\end\s*\{\s*(\w+\*?)\s*\}")
+_BEGIN_RE = re.compile(r"\\begin\s*\{\s*([\w @]+?\*?)\s*\}")
+_END_RE   = re.compile(r"\\end\s*\{\s*([\w @]+?\*?)\s*\}")
 
 # Optional note after \begin{env}: \begin{thm}[some note]
 _NOTE_RE  = re.compile(r"^\s*\[([^\]]*)\]")
