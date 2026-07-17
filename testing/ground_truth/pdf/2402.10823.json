@@ -1,0 +1,138 @@
+{
+  "arxiv_id": "2402.10823",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-15",
+  "note": "Uses tikz, skips a section, proof is for corollary before a remark",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... be a separated, finite type ... respect to the canonical inclusion of group schemes ...",
+      "proof": "For every ... we use ... The factorizations in parts ... also follow from the ... descent."
+    },
+    {
+      "kind": "remark",
+      "number": "1.2",
+      "body": "Part ... asserts that ... that the relative coarse moduli space of ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.5",
+      "body": "In the case ... the root gerbe corresponding to ... is the ... representation of ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.6",
+      "body": "Torus actions and fixed loci are ubiquitous in moduli theory ... for moduli spaces of stable maps."
+    },
+    {
+      "kind": "remark",
+      "number": "1.7",
+      "body": "Our strategy ... can be checked ... locally."
+    },
+    {
+      "kind": "remark",
+      "number": "1.8",
+      "body": "The connectedness assumption ... will depend on the connected component."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.9",
+      "body": "Let ... be a quasi-separated ... Then the conclusion of ... holds."
+    },
+    {
+      "kind": "remark",
+      "number": "1.10",
+      "body": "In fact ... after a reparameterization, and so ... generalizes ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.11",
+      "body": "In the setting ... restricts to the subgroup ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1.12",
+      "body": "This paper was inspired and strengthens the second ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.13",
+      "body": "Let ... Then there exist ... can be arranged to be representable ...",
+      "proof": "Applying ... yields an ... The addendum follow from ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.1",
+      "body": "Let ... be a morphism ... the trivial map.",
+      "proof": "Since ... is unramified ... so does ..."
+    },
+    {
+      "kind": "remark",
+      "number": "3.3",
+      "body": "Consider the following three conditions ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "3.4",
+      "body": "Under the hypotheses of ... for some Deligne-Mumford stack ...",
+      "proof": "For ... by the universal property ... which in turn implies the inclusion ..."
+    },
+    {
+      "kind": "remark",
+      "number": "3.5",
+      "body": "The universal property ... does not factor through ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.1",
+      "body": "The sequence ... is trivially split ...",
+      "proof": "The inclusion ... descends to a homomorphism ... as there are no non-trivial homomorphisms ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.2",
+      "body": "The subgroup ... is central with quotient ...",
+      "proof": "We first show that the sequence ... and thus so is ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.3",
+      "body": "... holds for ... ",
+      "proof": "... gives central subgroups ... from the identification ... and ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.4",
+      "body": "... holds for ... where ... is a connected ... finite type over ...",
+      "proof": "By the hypotheses ... and the identification ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.5",
+      "body": "... holds for ... is a connected, reduced, and separated ... over ...",
+      "proof": "By ... there is a reparameterization ... the proof proceeds as in ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "5.1",
+      "body": "Let ... be a smooth morphism ... such that the diagram ... can be arranged to be representable ...",
+      "proof": "The existence of the right commutative diagram ... by the same argument used in the proof of ..."
+    },
+    {
+      "kind": "remark",
+      "number": "5.2",
+      "body": "The above theorem was indepently proved in ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "5.3",
+      "body": "Let ... where ... is a quasi-separated ... inducing an isomorphism of stabilizer groups at ..."
+    },
+    {
+      "kind": "remark",
+      "number": "5.4",
+      "body": "The following are special cases of the above corollary ..."
+    }
+  ]
+}

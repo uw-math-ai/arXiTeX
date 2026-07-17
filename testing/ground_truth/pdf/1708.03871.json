@@ -1,0 +1,46 @@
+{
+  "arxiv_id": "1708.03871",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-16",
+  "note": "2017 game theory paper",
+  "statements": [
+    {
+      "kind": "definition",
+      "number": "1",
+      "body": "The utility function of an agent ... if and only if ... is preferred over ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2",
+      "body": "A human ... with utility function ... such that ..."
+    },
+    {
+      "kind": "definition",
+      "number": "3",
+      "body": "A human ... with utility function ... picks action ... such that ... with probability ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4",
+      "body": "Let ... be a ... agent with utility function ... with probability ...",
+      "proof": "According to ... is p-rational ... with probability ..."
+    },
+    {
+      "kind": "definition",
+      "number": "5",
+      "body": "A formal definition of our setup of the off-switch game is as follows ... "
+    },
+    {
+      "kind": "theorem",
+      "number": "9",
+      "body": "The expected value of the actions for the robot are ...",
+      "proof": "We compute the expected utility of the actions ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "10",
+      "body": "Action ... is preferred ... if and only iff ... and the robot is indifferent if ... is equal to 0.",
+      "proof": "... If ... then ... which occurs if and only if ... hence the agent is indifferent."
+    }
+  ]
+}

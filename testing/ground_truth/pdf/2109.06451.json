@@ -1,0 +1,239 @@
+{
+  "arxiv_id": "2109.06451",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-16",
+  "note": "Long paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... be a scheme ... wherre ... is invertible ... with weights ... and ... is isomorphic to ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.2",
+      "body": "Let ... be a scheme where ... is invertible ... the cohomological Brauer group ... we have ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.1",
+      "body": "The morphism ... is representable ... is isomorphic to ...",
+      "proof": "From ... the followign diagram is cartesian ... is isomorphic to ..."
+    },
+    {
+      "kind": "observation",
+      "number": "1",
+      "body": "The ring of invariants ... or in other terms ..."
+    },
+    {
+      "kind": "remark",
+      "number": "2.2",
+      "body": "Identifying the ring of invariants ... we can check that ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.3",
+      "body": "We will denote ... the weighted blow-up of ..."
+    },
+    {
+      "kind": "remark",
+      "number": "2.4",
+      "body": "The construction above gives a commutative diagram as follows ..."
+    },
+    {
+      "kind": "observation",
+      "number": "2",
+      "body": "The exceptional divisor of ... the ideal sheaf of the exceptional divisor to .. is isomorphic to ..."
+    },
+    {
+      "kind": "observation",
+      "number": "3",
+      "body": "From ... the inclusion of the exceptional divisor ... which is an isomorphism."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.5",
+      "body": "With the notations above, the morphism ... is proper",
+      "proof": "The product of ... Since a finite morphism is proper, also ... is proper."
+    },
+    {
+      "kind": "remark",
+      "number": "2.6",
+      "body": "We can check that our description agrees with the classical one ... gives the desired chart ... as in ..."
+    },
+    {
+      "kind": "notation",
+      "number": "1",
+      "body": "We will denote by ... the locus ... Observe that over a field, this is the point ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.7",
+      "body": "There is a Zariski neighbourhood ... sends a points ...",
+      "proof": "The coarse space of ... is the usual weighted projective space ... change of variables and ... to prove the result."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.8",
+      "body": "If we perform a blow-up ... we can lift the rational map ... to get ...",
+      "proof": "As the indeterminacy locus of ... we can perform a blow-up at ... in ... with weights ... to lift ..."
+    },
+    {
+      "kind": "observation",
+      "number": "4",
+      "body": "Observe that ... is proper"
+    },
+    {
+      "kind": "proposition",
+      "number": "2.9",
+      "body": "The morphism ... is a family of genus ... curves with a section.",
+      "proof": "We first prove that ... is a family of genus ... curves ... the section is the inclusion of the exceptional divisor ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.10",
+      "body": "There are isomorphisms ... which make the following diagram cartesian, where the morphism ...",
+      "proof": "From ... is a family of genus ... curves with a section ... is an isomorphism ... so it is an isomorphism."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.11",
+      "body": "Let ... and ... be morphisms of algebraic stacks ... Then ... is representable.",
+      "proof": "Recall that there is an equivalence of groupoids ... The result follows from ..."
+    },
+    {
+      "kind": "observation",
+      "number": "5",
+      "body": "Over a field, one can also prove ... the stack structure of ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.1",
+      "body": "The pull-back map ... is an isomorphism."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.2",
+      "body": "Let ... be a weighted projective stack over ... is an isomorphism."
+    },
+    {
+      "kind": "notation",
+      "number": "2",
+      "body": "We will adopt the following notations ..."
+    },
+    {
+      "kind": "observation",
+      "number": "6",
+      "body": "A ... over a stack ... is trivial if and only if ... line bundle ..."
+    },
+    {
+      "kind": "notation",
+      "number": "3",
+      "body": "For every geometric point ... We summarize the new notations in the following cartesian diagrams ..."
+    },
+    {
+      "kind": "remark",
+      "number": "4.1",
+      "body": "For any representable morphism ... the pull-backs as above for representable morphisms ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.2",
+      "body": "Let ... be the seminormalization ... Chow envelope, namely ... is surjective.",
+      "proof": "It is clear that ... Then for any irreducible closed subset ... Then ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.3",
+      "body": "If ... is an algebraic stack and ... and it is a Chow envelope.",
+      "proof": "As noted before ... Then the desired statement follows from ... as ..." 
+    },
+    {
+      "kind": "lemma",
+      "number": "4.4",
+      "body": "Let ... be a vector bundle ... is the ... Chern class of ...",
+      "proof": "Let ... the projection ... The claim follows since ..."
+    },
+    {
+      "kind": "observation",
+      "number": "7",
+      "body": "Let ... be a line bundle. For every ... such that ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.5",
+      "body": "Let ... be a scheme ... Consider the morphism ... which identifies ...",
+      "proof": "We can factor ... The map ... fits in an exact sequence ... and the last one from ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.6",
+      "body": "We adopt the notations of ... induces an isomorphism ... which identifies ... with ...",
+      "proof": "Let ... the projection ... and from ... So ..."
+    },
+    {
+      "kind": "notation",
+      "number": "4",
+      "body": "We adopt the following notation ... stable curves ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.7",
+      "body": "Given ... we have ... where ...",
+      "proof": "As ... is the complement of the zero section of the vector bundle ... we have ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.8",
+      "body": "Consider ... a weighted projective stack ... then ...",
+      "proof": "We first prove ... Observe now that there is an open embedding ... follows from the projection formula ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.9",
+      "body": "We have ... where ...",
+      "proof": "Recall that the point ... of the form ... is exact ... for every ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.10",
+      "body": "Let ... be the class of the exceptional divisor ... is of the form ... and ...",
+      "proof": "We have that ... The second statement ... But ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.11",
+      "body": "Let us denote by ... Then ...",
+      "proof": "Observe that ... since the restriction of ... Therefore ... as desired."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.12",
+      "body": "We have ... where ... is the class of the exceptional divisor ... the pull-back ...",
+      "proof": "If ... is the exceptional divisor of ... and we have the exact sequence ... Then ... we have ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.13",
+      "body": "Let ... Then ... where",
+      "proof": "Let ... be the inclusion ... arrows being isomorphisms and the vertical ones proper ... and ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.14",
+      "body": "Let ... where the action of ... with non-trivial stabilizer ... is a set of generators ...",
+      "proof": "From the inclusion ... of ... sends ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.15",
+      "body": "We have ... where ... is the restriction of ... to ...",
+      "proof": "We have an exact sequence ... and from ... is generated by ... so ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.16",
+      "body": "The restriction map ... can be identified ... that sends ... and ..."
+    }
+  ]
+}

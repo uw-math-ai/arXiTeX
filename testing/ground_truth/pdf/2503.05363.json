@@ -1,0 +1,20 @@
+{
+  "arxiv_id": "2503.05363",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-16",
+  "note": "Probability paper, long proof",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1",
+      "body": "For each ... we have ...",
+      "proof": "First assign passengers ... move all but passenger ... from bus ... to bus ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2",
+      "body": "For each ... we have ...",
+      "proof": "In view of ... it is sufficient to prove ... This proves the claim, completing the proof."
+    }
+  ]
+}

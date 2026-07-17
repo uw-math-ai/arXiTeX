@@ -1,0 +1,108 @@
+{
+  "arxiv_id": "1010.3812",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-16",
+  "note": "2010 paper, nested envs",
+  "statements": [
+    {
+      "kind": "definition",
+      "number": "1",
+      "body": "The doubling dimension of a set ... can be covered by ... balls of radius ..."
+    },
+    {
+      "kind": "fact",
+      "number": "2",
+      "body": "There is a constant ... with the following property ... more than ... levels below ... has"
+    },
+    {
+      "kind": "fact",
+      "number": "3",
+      "body": "For any ... with probability at least ... levels below ... has ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "4",
+      "body": "There is a constant ... with the following property ... which is more than ... levels below ... has ...",
+      "proof": "Without loss of generality assume ... Solving the recurrence gives ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "5",
+      "body": "There is a constant ... with the following property. Suppose an ... levels below ... we have ...",
+      "proof": "Consider a cell ... of radius ... and fix a pair of balls contained ... Then the following holds ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "6",
+      "body": "Let ... be a ball contained inside ... Then a random split of cell splits ... with probability ...",
+      "proof": "The ... splits proceed by randomly projecting the data ... getting split is the following ..."
+    },
+    {
+      "kind": "fact",
+      "number": "7",
+      "body": "... \\geq ... \\leq ... "
+    },
+    {
+      "kind": "lemma",
+      "number": "8",
+      "body": "Let ... be a pair of balls as described above ... with probability at least ...",
+      "proof": "The techniques used in the proof of this lemma ... We use the following two results from ..."
+    },
+    {
+      "kind": "fact",
+      "number": "9",
+      "body": "Fix any ... Pick a random vector ... any ..."
+    },
+    {
+      "kind": "fact",
+      "number": "10",
+      "body": "Suppose ... lies within ball ... over the choice of random projection onto ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "11",
+      "body": "Be ... be a pair of balls as described above contained in the cell ... with respect to this pair with probability at most ...",
+      "proof": "The proof of a similar result in ... uses a conditional probability argument ... result then follows from an application of ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "12",
+      "body": "... p ... 1 ... 68 ...",
+      "proof": "We have the following expression for ... Similarly ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "13",
+      "body": "Give any fixed ball ... with probability greater ... cells of radius greater ...",
+      "proof": "Given a ball ... shows that with probability ... The success probability is at least ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "14",
+      "body": "There exist a constant ... such that the probability ... getting split before it lands up in a cell of radius ...",
+      "proof": "The only bad event for us is the one ... since the second summation is just a constant."
+    },
+    {
+      "kind": "theorem",
+      "number": "15",
+      "body": "There exists a constant ... such that with probability ... radius no more than ...",
+      "proof": "Let ... be the radius of the entire dataset ... Setting ... gives us the desired result."
+    },
+    {
+      "kind": "definition",
+      "number": "16",
+      "body": "A set ... has local covariance dimension ... fraction of its trace."
+    },
+    {
+      "kind": "theorem",
+      "number": "17",
+      "body": "Given a data set ... has local covariance dimension ...",
+      "proof": "Suppose ... for ... and we are given data points ... uses the fact that for a random variable and fixed ..."
+    },
+    {
+      "kind": "fact",
+      "number": "18",
+      "body": "Suppose ... is a Riemannian manifold ... Then for any ..."
+    }
+  ]
+}

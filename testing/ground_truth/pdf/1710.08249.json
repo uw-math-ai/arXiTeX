@@ -1,0 +1,26 @@
+{
+  "arxiv_id": "1710.08249",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-16",
+  "note": "2018 discrete analysis paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1",
+      "body": "For any ... the graph ... has a Hamilton cycle.",
+      "proof": "Let ... be the ... This completes the proof."
+    },
+    {
+      "kind": "proposition",
+      "number": "2",
+      "body": "For any ... the ... defined in ... has the following properties ...",
+      "proof": "To prove ... denote the spanning subgraph ... is an immediate consequence of ... and the definition of plane trees."
+    },
+    {
+      "kind": "proposition",
+      "number": "3",
+      "body": "For any ... have the following properties ...",
+      "proof": "To prove ... consider a flippable pair ... The previous analysis in the last case where ..."
+    }
+  ]
+}

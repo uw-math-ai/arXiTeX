@@ -1,0 +1,54 @@
+{
+  "arxiv_id": "2510.15089",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-15",
+  "note": "Equation-heavy",
+  "statements": [
+    {
+      "kind": "lemma",
+      "number": "2.1",
+      "body": "Let ... satisfy the Landau equation with ... If we assume further that ... with ... then ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.2",
+      "body": "Suppose that $f$ is a probability density with ... depending only on ... such that ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.3",
+      "body": "Assume that $f$ and $g$ are two probability ... Then ...",
+      "proof": "Take ... Then by Taylor's expansion ... for some ... Thus, ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.1",
+      "body": "For any ... it holds that ... then it holds that ...",
+      "proof": "By the estimates shown in page ... one has the following functional inequality ... Further, if ... then ... and ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.2",
+      "body": "Assume the initial finiteness of the following weighted ... Then we have the following growth estimates ...",
+      "proof": "By the Cauchy-Schwarz and ... By Sobolev embedding ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.3",
+      "body": "For any ... with finite energy and entropy ... for some constant ... that depends only on the energy and entropy of ...",
+      "proof": "Note that ... Using estimates ... we obtain ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.1",
+      "body": "Assume that ... solve the Landau equation ... in particular ...",
+      "proof": "We will write ... Gronwall's inequality completes the proof."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.2",
+      "body": "Assume that ... solves the Landau equation ... In particular, assuming identical data ... one has ...",
+      "proof": "We omit the time subscript for brevity ... Gronwall's inequality completes the proof."
+    }
+  ]
+}
