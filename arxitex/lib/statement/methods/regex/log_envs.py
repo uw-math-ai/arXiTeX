@@ -21,6 +21,7 @@ Each Environment has:
     end_line   - 1-based line number of \\end{env}
 """
 
+import hashlib
 import re
 from typing import Optional
 from pydantic import BaseModel, field_validator
@@ -41,6 +42,8 @@ class Environment(BaseModel):
     end_line:   int
     begin_pos:  int  # char offset of \begin{env} in the comment-stripped source
     end_pos:    int  # char offset just after \end{env} in the comment-stripped source
+    body_start: int = 0  # char offset where the body (after \begin[note]) starts
+    body_end:   int = 0  # char offset where the body ends (at \end)
 
     @field_validator("env", "raw_env", "ref", "note", "body", mode="before")
     @classmethod
@@ -768,25 +771,95 @@ def log_envs(tex: str) -> list[Environment]:
             open_env, body_start, begin_line, note, ref, begin_pos = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
-            raw_body = clean[body_start:tok_start]
-            # A statement may carry several \labels (e.g. a theorem restated in a
-            # later section). Keep them all so a proof can reference any one.
-            labels   = [l.strip() for l in _LABEL_RE.findall(raw_body)]
-            body     = re.sub(r'\s+', ' ', _expand_macros(_LABEL_RE.sub("", raw_body), macros)).strip()
-
             env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
 
+            # Body/labels are finalized in a second pass (_resolve_nesting), which
+            # needs every env's span to detect nested statements.
             results.append(Environment(
                 env        = env_name,
                 raw_env    = open_env,
                 ref        = ref,
                 note       = note,
-                labels     = labels,
-                body       = body,
+                labels     = [],
+                body       = "",
                 begin_line = begin_line,
                 end_line   = end_line,
                 begin_pos  = begin_pos,
                 end_pos    = tok_end,
+                body_start = body_start,
+                body_end   = tok_start,
             ))
 
+    _resolve_nesting(results, clean, macros, thm_defs)
     return results
+
+
+###############################################################################
+# Nesting resolution
+###############################################################################
+
+def _resolve_nesting(
+    results: list[Environment],
+    clean: str,
+    macros: dict[str, tuple[int, str]],
+    thm_defs: dict[str, dict],
+) -> None:
+    """
+    Build each env's body and labels, resolving nested statements.
+
+    A theorem-like statement may sit inside another statement or a proof (papers
+    restate a lemma inside its proof, for example). Each such inner statement is
+    still extracted on its own, and in the *outer* body it is replaced by a
+    ``\\ref`` to it, so the outer body isn't a duplicate of the inner. An inner
+    statement without a ``\\label`` gets a synthetic ``inner-<hash>`` one, so the
+    reference has a target.
+
+    Numbering is untouched: each env's ``ref`` was assigned at ``\\begin`` time in
+    source order, which is exactly how LaTeX counts a nested environment.
+    """
+    def is_stmt(e: Environment) -> bool:
+        return e.raw_env in thm_defs
+
+    def is_extracted(e: Environment) -> bool:
+        return is_stmt(e) or e.raw_env == "proof"
+
+    def strictly_inside(inner: Environment, outer: Environment) -> bool:
+        return (inner is not outer
+                and outer.body_start <= inner.begin_pos
+                and inner.end_pos <= outer.body_end)
+
+    def synth_label(e: Environment) -> str:
+        digest = hashlib.sha1(clean[e.body_start:e.body_end].encode("utf-8")).hexdigest()
+        return f"inner-{digest[:8]}"
+
+    has_extracted_parent = {
+        id(e): any(is_extracted(o) and strictly_inside(e, o) for o in results)
+        for e in results
+    }
+
+    # Innermost first, so each nested statement's label (real or synthetic) is
+    # fixed before the outer that references it is built.
+    for env in sorted(results, key=lambda e: e.body_end - e.body_start):
+        raw = clean[env.body_start:env.body_end]
+
+        # Splice out nested statements so their text (and labels) don't bleed
+        # into the enclosing env. A statement/proof — whose body we keep —
+        # references the inner one by \ref; everything else (a section wrapper,
+        # a figure, the document) just drops it, since its body is discarded.
+        nested = [c for c in results if is_stmt(c) and strictly_inside(c, env)]
+        direct = [c for c in nested
+                  if not any(strictly_inside(c, o) for o in nested)]
+        for child in sorted(direct, key=lambda c: c.begin_pos, reverse=True):
+            s = child.begin_pos - env.body_start
+            e = child.end_pos - env.body_start
+            ref = f" \\ref{{{child.labels[0]}}} " if is_extracted(env) else " "
+            raw = raw[:s] + ref + raw[e:]
+
+        # Own labels are the \labels left after nested statements were spliced
+        # out. A nested statement with none gets a synthetic one, so the
+        # reference to it has a target and the extracted statement has an id.
+        own = [l.strip() for l in _LABEL_RE.findall(raw)]
+        if not own and is_stmt(env) and has_extracted_parent[id(env)]:
+            own = [synth_label(env)]
+        env.labels = own
+        env.body = re.sub(r"\s+", " ", _expand_macros(_LABEL_RE.sub("", raw), macros)).strip()

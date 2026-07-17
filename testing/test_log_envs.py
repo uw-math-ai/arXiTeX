@@ -38,6 +38,62 @@ def test_space_named_env_advances_the_shared_counter():
     assert by_label["s1"].env == "primary statistics"
 
 
+def test_nested_statement_is_extracted_and_referenced_in_the_outer():
+    # a fact restated inside a proof: extracted on its own, and the proof body
+    # references it (\ref) instead of embedding a duplicate copy of it.
+    src = r"""
+    \newtheorem{lemma}{Lemma}
+    \newtheorem{fact}[lemma]{Fact}
+    \begin{document}
+    \begin{lemma}\label{lem:main}The main lemma statement is here.\end{lemma}
+    \begin{proof}
+    We rely on the following.
+    \begin{fact}\label{fct:helper}Every group has an identity element.\end{fact}
+    Applying the fact finishes the proof.
+    \end{proof}
+    \end{document}
+    """
+    envs = log_envs(src)
+    by_label = {lab: e for e in envs for lab in e.labels}
+    # the nested fact is extracted, numbered on the shared counter (lemma 1, fact 2)
+    assert by_label["fct:helper"].env == "fact"
+    assert by_label["fct:helper"].ref == "2"
+    proof = next(e for e in envs if e.raw_env == "proof")
+    assert r"\ref{fct:helper}" in proof.body
+    assert "identity element" not in proof.body   # inner body not duplicated into outer
+    assert proof.labels == []                       # proof does not steal the inner label
+
+
+def test_unlabeled_nested_statement_gets_a_synthetic_label():
+    src = r"""
+    \newtheorem{lemma}{Lemma}
+    \newtheorem{fact}[lemma]{Fact}
+    \begin{document}
+    \begin{proof}
+    \begin{fact}A nameless nested fact with no label at all here.\end{fact}
+    That concludes the argument.
+    \end{proof}
+    \end{document}
+    """
+    envs = log_envs(src)
+    fact = next(e for e in envs if e.raw_env == "fact")
+    assert len(fact.labels) == 1 and fact.labels[0].startswith("inner-")
+    proof = next(e for e in envs if e.raw_env == "proof")
+    assert fact.labels[0] in proof.body            # the synthetic label is what's referenced
+
+
+def test_top_level_unlabeled_statement_gets_no_synthetic_label():
+    # synthetic labels are only for *nested* statements that need a reference
+    src = r"""
+    \newtheorem{theorem}{Theorem}
+    \begin{document}
+    \begin{theorem}An ordinary unlabeled top-level theorem statement.\end{theorem}
+    \end{document}
+    """
+    thm = next(e for e in log_envs(src) if e.raw_env == "theorem")
+    assert thm.labels == []
+
+
 def test_starred_env_names_still_match():
     # the widened begin/end matcher must not regress starred environments
     src = r"""
