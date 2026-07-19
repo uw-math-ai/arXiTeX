@@ -149,6 +149,18 @@ def test_extract_json_raises_when_there_is_no_object():
         _extract_json("I could not read that paper, sorry.")
 
 
+def test_extract_json_repairs_invalid_backslash_escapes():
+    # a raw LaTeX control sequence in a string is an invalid JSON escape and
+    # would otherwise abort the whole parse (the 2109.06451 failure)
+    from eval.annotate import _sanitize_json
+    bad = r'{"note": "", "statements": [{"kind": "theorem", "body": "where \alpha \geq 0"}]}'
+    data = _extract_json(bad)
+    assert data["statements"][0]["body"] == r"where \alpha \geq 0"
+    # valid JSON (with real escapes) must pass through the sanitizer untouched
+    good = '{"a": "line1\\nline2 and a \\" quote"}'
+    assert _sanitize_json(good) == good
+
+
 def test_extract_json_tolerates_raw_newlines_inside_strings():
     # models routinely emit literal newlines in transcribed text; strict JSON
     # rejects them ("Invalid control character"), so the extractor must not.

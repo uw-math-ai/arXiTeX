@@ -7,12 +7,12 @@ the human one (treated as fact). If the model agrees closely, it's safe to use
 it to expand the test set without hand-annotating every paper.
 
 The human annotation is the ground truth; the model's annotation is the thing
-under test. So, per paper:
+under test. The model records only kind, number, and body (proofs are left to
+human annotators), so that's what we grade. Per paper:
 
     detection recall     did the model find the statements the human recorded?
     detection precision  are the model's statements real (in the human set)?
     kind / number        on the statements both found, do they agree?
-    proof                where the human recorded a proof, did the model too?
 
 Run it from the ``testing/`` directory (needs NEBIUS_API_KEY in .env):
 
@@ -65,7 +65,6 @@ class Tally:
         self.tp = self.fp = self.fn = 0
         self.kind_ok = 0
         self.num_ok = self.num_total = 0
-        self.proof_ok = self.proof_total = 0
 
     def add(self, report: PaperReport) -> None:
         self.tp += report.tp
@@ -76,9 +75,6 @@ class Tally:
             if v.gt.number is not None:
                 self.num_total += 1
                 self.num_ok += _field_ok(v, "number")
-            if v.gt.proof is not None:
-                self.proof_total += 1
-                self.proof_ok += _field_ok(v, "proof")
 
 
 def _pct(n: int, d: int) -> str:
@@ -92,8 +88,6 @@ def _paper_lines(name: str, human: int, report: PaperReport) -> list[str]:
     kind_ok = sum(_field_ok(v, "kind") for v in report.matched)
     num_ok = sum(_field_ok(v, "number") for v in report.matched if v.gt.number is not None)
     num_tot = sum(1 for v in report.matched if v.gt.number is not None)
-    pr_ok = sum(_field_ok(v, "proof") for v in report.matched if v.gt.proof is not None)
-    pr_tot = sum(1 for v in report.matched if v.gt.proof is not None)
     return [
         f"{name}   human={human} stmts, model={model_n} stmts",
         f"  detection : found {report.tp}/{human} (recall {_pct(report.tp, human)}), "
@@ -101,7 +95,6 @@ def _paper_lines(name: str, human: int, report: PaperReport) -> list[str]:
         f"missed {report.fn}, invented {report.fp}",
         f"  kind      : {kind_ok}/{report.tp}",
         f"  number    : {num_ok}/{num_tot}   (pairs where the human recorded a number)",
-        f"  proof     : {pr_ok}/{pr_tot}   (pairs where the human recorded a proof)",
     ]
 
 
@@ -127,7 +120,6 @@ def _overall(tally: Tally) -> list[str]:
         f"(this share of the model's statements are real)",
         f"  kind accuracy        : {_pct(tally.kind_ok, tally.tp)}",
         f"  number accuracy      : {_pct(tally.num_ok, tally.num_total)}",
-        f"  proof accuracy       : {_pct(tally.proof_ok, tally.proof_total)}",
         "",
         "Human ground truth is treated as fact. 'invented' = a statement the model",
         "reported that the human did not; 'missed' = a human statement the model did not.",

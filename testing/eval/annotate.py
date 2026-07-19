@@ -5,9 +5,12 @@ would write by hand.
 The paper's PDF is downloaded and each page **rendered to an image** (PyMuPDF),
 then shown to a vision model — so it reads the typeset page exactly as a human
 annotator does, rather than a mangled text layer. It lists every theorem-like
-statement with its printed number and an elided transcription. Output goes to
-``ground_truth/pdf/<arxiv_id>.json`` with ``annotator`` set to the model id, so
-LLM- and human-annotated papers stay distinguishable.
+statement with its printed number and a words-only, math-free elided body.
+Output goes to ``ground_truth/pdf/<arxiv_id>.json`` with ``annotator`` set to the
+model id, so LLM- and human-annotated papers stay distinguishable.
+
+The model does **not** record proofs — proof capture is left to human
+annotators. An LLM annotation validates only kind, number, and statement body.
 
 Pages are sent in **batches** (a whole paper at once is both too many image
 tokens and too large a request), with a one-page **overlap** so a statement
@@ -77,30 +80,29 @@ Statement kinds to record (lowercase): theorem, lemma, proposition, corollary,
 definition, remark, claim, fact, observation, conjecture, hypothesis, axiom,
 example, notation, convention.
 
+Do NOT record proofs, in any form.
+
 Rules:
 - Record the statement's PRINTED number in "number" (e.g. "1.1", "A.3"), exactly
   as shown. If a statement is genuinely unnumbered, omit "number".
-- Do NOT record proofs as their own statements. If a statement has a proof, put
-  an elided transcription of that proof in the statement's "proof" field. If it
-  has no proof, omit "proof".
-- A proof that covers several statements ("Proof of Theorem 1.5 and Corollary
-  1.6") belongs to each of them: give each statement that same proof text.
-- "body" and "proof" are ELIDED transcriptions: copy the opening words verbatim,
-  write " ... " wherever you skip content, and copy the closing words verbatim.
-  Aim for roughly 5-12 words at each end. Never invent words.
+- "body" is an ELIDED transcription of the statement: copy the opening WORDS,
+  write " ... " wherever you skip content, and copy the closing WORDS. Aim for
+  roughly 5-12 words at each end. Never invent words.
+- Use WORDS ONLY in "body" -- ordinary prose. NEVER use mathematical symbols,
+  LaTeX, backslashes, dollar signs, superscripts, or subscripts. When you reach
+  something that is not a word:
+    * write it as a word if you can ("R to the n" -> "R to the n", not "R^n");
+    * if no word fits, use its plain LETTER(s) ("the group G" -> "the group G");
+    * if not even a letter fits, use a plain NUMBER.
+  Example: for "Let $X$ be a compact $n$-manifold" write "Let X be a compact
+  n manifold".
 - Mark anything you cannot see with a run-off ellipsis, and never guess past it:
-    * If it starts before the first page shown, BEGIN with "... ".
+    * If the statement starts before the first page shown, BEGIN with "... ".
     * If it runs past the last page shown, END with " ...".
-  A proof is finished only where you can see its QED marker (a filled or hollow
-  square, or "q.e.d."). If no QED marker is visible, the proof is NOT finished:
-  end its transcription with " ..." rather than inventing closing words. Proofs
-  often run across several pages, so expect this.
 - Skip nothing: record every statement shown on these pages, whether in the
   introduction, a later section, or an appendix. Numbers may have gaps; that is
   fine, record what is shown.
-- Ignore figures, tables, equations, and bare section headings.
-- A statement may begin on an earlier page or continue past the last page shown.
-  Record it anyway, from whatever is visible.
+- Ignore proofs, figures, tables, equations, and bare section headings.
 - Read the printed number off the page. Do not renumber, infer, or continue a
   sequence yourself.
 
@@ -109,8 +111,8 @@ Return ONLY a JSON object, no prose and no markdown fence:
 {
   "note": "<one short remark about the paper, e.g. 'uses tikz'; may be empty>",
   "statements": [
-    {"kind": "theorem", "number": "1.1", "body": "Let ... be a good moduli space ... maps to the closed point of ...", "proof": "We first assume ... which concludes the argument ..."},
-    {"kind": "remark", "number": "1.2", "body": "We can factor the resulting morphism ... is representable."}
+    {"kind": "theorem", "number": "1.1", "body": "Let X be a good moduli space ... maps to the closed point of Y"},
+    {"kind": "remark", "number": "1.2", "body": "We can factor the resulting morphism ... is representable"}
   ]
 }
 """
@@ -222,25 +224,54 @@ def _merge(batches: List[List[PdfStatement]]) -> List[PdfStatement]:
     return out
 
 
+# A backslash that begins a valid JSON escape: \" \\ \/ \b \f \n \r \t \uXXXX.
+_VALID_ESCAPE = re.compile(r'\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})')
+
+
+def _sanitize_json(content: str) -> str:
+    r"""Escape backslashes that don't begin a valid JSON escape.
+
+    Models sometimes leak a LaTeX control sequence into a string (``\alpha``,
+    ``\geq``), which is an invalid JSON escape and aborts the whole parse. Doubling
+    any such lone backslash makes the string parseable (it decodes back to the
+    literal ``\alpha``); genuine escapes are left untouched, so valid JSON is
+    unchanged.
+    """
+    out: list[str] = []
+    i = 0
+    while i < len(content):
+        if content[i] == "\\":
+            m = _VALID_ESCAPE.match(content, i)
+            if m:
+                out.append(m.group(0))
+                i = m.end()
+            else:
+                out.append("\\\\")
+                i += 1
+        else:
+            out.append(content[i])
+            i += 1
+    return "".join(out)
+
+
 def _extract_json(content: str) -> dict:
     """Pull the JSON object out of a model response, tolerating stray prose.
 
-    ``strict=False`` permits raw control characters inside strings — models
-    routinely emit literal newlines in transcribed text, which strict JSON
-    rejects.
+    ``strict=False`` permits raw control characters (models emit literal newlines
+    in transcribed text); ``_sanitize_json`` repairs invalid backslash escapes.
     """
     content = content.strip()
     fence = re.search(r"```(?:json)?\s*(.*?)```", content, re.DOTALL)
     if fence:
         content = fence.group(1).strip()
-    try:
-        return json.loads(content, strict=False)
-    except json.JSONDecodeError:
-        pass
     start, end = content.find("{"), content.rfind("}")
     if start == -1 or end <= start:
         raise ValueError(f"no JSON object in model response:\n{content[:500]}")
-    return json.loads(content[start : end + 1], strict=False)
+    blob = content[start : end + 1]
+    try:
+        return json.loads(blob, strict=False)
+    except json.JSONDecodeError:
+        return json.loads(_sanitize_json(blob), strict=False)
 
 
 def annotate(
@@ -292,7 +323,13 @@ def annotate(
                 f"retries: {e}"
             ) from e
         data = _extract_json(resp.choices[0].message.content or "")
-        found = [PdfStatement.model_validate(s) for s in data.get("statements", [])]
+        # Proof capture is left to human annotators; drop any proof the model
+        # emits so an LLM annotation only ever validates kind/number/body.
+        found = []
+        for s in data.get("statements", []):
+            if isinstance(s, dict):
+                s.pop("proof", None)
+            found.append(PdfStatement.model_validate(s))
         per_batch.append(found)
         if data.get("note"):
             notes.append(str(data["note"]).strip())

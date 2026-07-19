@@ -125,9 +125,15 @@ python -m eval.run --mode pdf -m regex --out results.txt   # also save a .txt
 
 ## Annotating a paper with a vision LLM
 
-`eval.annotate` produces the same JSON a human would. It downloads the paper's
-PDF, **renders each page to an image** (PyMuPDF), and shows those to a vision
-model — so it reads the typeset page exactly as a human annotator does:
+`eval.annotate` downloads the paper's PDF, **renders each page to an image**
+(PyMuPDF), and shows those to a vision model — so it reads the typeset page
+exactly as a human annotator does.
+
+**It records only `kind`, `number`, and a words-only `body`** — no proofs (proof
+capture is left to human annotators), and bodies are plain prose with no math or
+LaTeX (a symbol becomes a word, else a letter, else a number). So an LLM
+annotation validates kind/number/body only; run `eval.annotator_accuracy` to see
+how closely a given model reproduces the human ground truth on those fields.
 
 ```bash
 cd testing
