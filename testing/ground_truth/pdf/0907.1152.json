@@ -1,0 +1,63 @@
+{
+  "arxiv_id": "0907.1152",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-18",
+  "note": "2009 paper, matrices",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... be a sequence which terms are from a commutative ring ... Assume that ... Then ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.1",
+      "body": "Let ... be arbitrary natural number. Then ... where the size of the determinant is ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.2",
+      "body": "Let ... be a polynomial from ... Then ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.3",
+      "body": "If ... are Fibonacci polynomials then ... The size of the determinant is ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.4",
+      "body": "For Tchebychev polynomials of the first kind ... we have ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.5",
+      "body": "For Tchebychev polynomials of the second kind ... we have ..."
+    },
+    {
+      "kind": "note",
+      "number": "2.6",
+      "body": "The preceding classes of polynomials ... with constant coefficients."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.7",
+      "body": "For Hermite polynomials ... we have ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.8",
+      "body": "For Legendre polynomials ... we have ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.9",
+      "body": "For Laguerre polynomials ... we have ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.10",
+      "body": "Let ... be a fixed natural number ... arbitary elements ... and let ... be as in ... determinant is ..."
+    }
+  ]
+}

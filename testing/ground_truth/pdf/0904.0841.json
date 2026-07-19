@@ -1,0 +1,39 @@
+{
+  "arxiv_id": "0904.0841",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-18",
+  "note": "2009 paper, conjectures",
+  "statements": [
+    {
+      "kind": "conjecture",
+      "number": "1.1",
+      "body": "Given ... for ... attains its minimum at ... with ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.1",
+      "body": "Given ... for ... atains its minumum at ... with ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.2",
+      "body": "Let ... be an integer. The sequence ... is strictly ratio monotone, that is ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "2.3",
+      "body": "For ... the sequence ... is spiral, that is ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.4",
+      "body": "For ... and ...",
+      "proof": "First, it follows from ... taht ... This completes the proof."
+    },
+    {
+      "kind": "conjecture",
+      "number": "2.5",
+      "body": "The sequence ... is strongly ratio monotone ..."
+    }
+  ]
+}

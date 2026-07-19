@@ -1,0 +1,32 @@
+{
+  "arxiv_id": "0906.0734",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-18",
+  "note": "Nested envs, multiple proofs for Theorem 1",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1",
+      "body": "Any infinite Abelian group ... such that ... admits a ... reflexive group topology.",
+      "proof": "Set ... where ... and ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2",
+      "body": "... s ... u ... n ... k ... m ... k ...",
+      "proof": "We can rewrite ... as follows ... The converse assertion evidently follows from ... and ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3",
+      "body": "... is dense in ... and, hence ... is monothetic.",
+      "proof": "Let ... and ... Choose ... such that ... By ... So ... and ... is dense in ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4",
+      "body": "... algebraically.",
+      "proof": "Since ... is dense in ... and continuous character ..."
+    }
+  ]
+}

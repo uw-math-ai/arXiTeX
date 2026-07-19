@@ -1,0 +1,57 @@
+{
+  "arxiv_id": "0907.3542",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-18",
+  "note": "2009 paper, rings",
+  "statements": [
+    {
+      "kind": "remark",
+      "number": "1",
+      "body": "Let ... and ... Then for and ideal ... derive the same for ... and ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2",
+      "body": "Let ... be a Noetherian local ring ... is a regular sequence."
+    },
+    {
+      "kind": "remark",
+      "number": "3",
+      "body": "In the above Proposition, we have shown ... is not true in general."
+    },
+    {
+      "kind": "proposition",
+      "number": "5",
+      "body": "Let ... be a Cohen-Macaulay local ring and ... for any minimal reduction ... of ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "6",
+      "body": "Let ... be a lex-segment ideal in ... Cohen-Macaulay.",
+      "proof": "Let ... for some ... is Cohen-Macaulay."
+    },
+    {
+      "kind": "theorem",
+      "number": "7",
+      "body": "Let ... and ... a lex-segment ideal ... Cohen-Macaulay.",
+      "proof": "Let ... If ... then ... is Cohen-Macaulay."
+    },
+    {
+      "kind": "remark",
+      "number": "8",
+      "body": "The above result together with ... for any lex-segment ideal ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "9",
+      "body": "Let ... be a lex-segment ideal in ... Then, ...",
+      "proof": "... Note that ... Hence ... so that ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "10",
+      "body": "Let ... be a lex-segment ideal in ... Then ... if and only if ...",
+      "proof": "Let ... Then, .. Therefore, ... Hence ..."
+    }
+  ]
+}
