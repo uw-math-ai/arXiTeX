@@ -105,19 +105,18 @@ def _paper_lines(name: str, human: int, report: PaperReport) -> list[str]:
     ]
 
 
-def format_report(rows: list[tuple[str, int, PaperReport]], tally: Tally, model: str) -> str:
-    out = [
+def _header(model: str, n_papers: int) -> list[str]:
+    return [
         "arXiTeX vision-annotator accuracy vs human ground truth",
         f"  model  : {model}",
-        f"  papers : {len(rows)}",
+        f"  papers : {n_papers}",
         f"  date   : {datetime.date.today()}",
         _RULE,
     ]
-    for name, human, report in rows:
-        out.append("")
-        out.extend(_paper_lines(name, human, report))
 
-    out += [
+
+def _overall(tally: Tally) -> list[str]:
+    out = [
         "",
         _RULE,
         "OVERALL",
@@ -133,7 +132,7 @@ def format_report(rows: list[tuple[str, int, PaperReport]], tally: Tally, model:
         "Human ground truth is treated as fact. 'invented' = a statement the model",
         "reported that the human did not; 'missed' = a human statement the model did not.",
     ]
-    return "\n".join(out)
+    return out
 
 
 def main(argv=None) -> None:
@@ -177,26 +176,34 @@ def main(argv=None) -> None:
 
     from tqdm import tqdm
 
-    rows: list[tuple[str, int, PaperReport]] = []
-    tally = Tally()
-    for stem, human_gt in tqdm(sorted(truths.items()), desc="annotating", unit="paper"):
-        try:
-            model_gt = annotate(human_gt.arxiv_id, verbose=False, **kw)
-            report = score_pdf(as_statements(model_gt), human_gt, config=args.model)
-        except Exception as exc:
-            report = PaperReport(stem, args.model, "pdf",
-                                 misses=list(human_gt.statements), error=str(exc))
-        report.name = stem
-        rows.append((stem, len(human_gt.statements), report))
-        if not report.error:
-            tally.add(report)
-
-    text = format_report(rows, tally, args.model)
-    print("\n" + text)
-
     out = Path(args.out) if args.out else Path(
         f"annotator_accuracy_{datetime.datetime.now():%Y%m%d-%H%M}.txt")
-    out.write_text(text + "\n", encoding="utf-8")
+
+    # Stream results: each paper is printed and appended to the .txt the moment
+    # it finishes, so a long run is watchable rather than silent until the end.
+    def emit(lines: list[str], f) -> None:
+        block = "\n".join(lines)
+        tqdm.write(block)
+        f.write(block + "\n")
+        f.flush()
+
+    tally = Tally()
+    with out.open("w", encoding="utf-8") as f:
+        emit(_header(args.model, len(truths)), f)
+        bar = tqdm(sorted(truths.items()), desc="annotating", unit="paper")
+        for stem, human_gt in bar:
+            try:
+                model_gt = annotate(human_gt.arxiv_id, verbose=False, **kw)
+                report = score_pdf(as_statements(model_gt), human_gt, config=args.model)
+            except Exception as exc:
+                report = PaperReport(stem, args.model, "pdf",
+                                     misses=list(human_gt.statements), error=str(exc))
+            report.name = stem
+            if not report.error:
+                tally.add(report)
+            emit([""] + _paper_lines(stem, len(human_gt.statements), report), f)
+        emit(_overall(tally), f)
+
     print(f"\nWrote results to {out}")
 
 
