@@ -430,6 +430,18 @@ def _parse_theorem_defs(
 # Counter format pre-pass
 ###############################################################################
 
+# Presentation markup left over after a \the<counter> format is evaluated.
+# \renewcommand{\thesubsection}{{\bf\arabic{subsection}}} yields "{\bf5}", but
+# the number a reader sees is just "5" — the bold is styling, not part of it.
+_REF_MARKUP_RE = re.compile(r"\\[a-zA-Z@]+\s*|[{}$]")
+
+
+def _clean_ref(ref: str) -> str:
+    """Strip styling (\\bf, braces, ...) from an evaluated counter, leaving the
+    number as printed."""
+    return _REF_MARKUP_RE.sub("", ref).strip()
+
+
 # Matches \renewcommand{\thefoo}{<format_body>}
 # Also handles \renewcommand*{...}{...}
 # Matches up to and including the opening { of the format body.
@@ -696,7 +708,7 @@ def log_envs(tex: str) -> list[Environment]:
         if root is None:
             return None
         bank.step(root)
-        return _counter_ref(root)
+        return _clean_ref(_counter_ref(root)) or None
 
     # ── 5. collect interleaved events and scan ────────────────────────────────
 

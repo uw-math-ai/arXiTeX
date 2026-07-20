@@ -94,6 +94,28 @@ def test_top_level_unlabeled_statement_gets_no_synthetic_label():
     assert thm.labels == []
 
 
+def test_counter_format_markup_is_stripped_from_the_ref():
+    # \renewcommand{\thesubsection}{{\bf\arabic{subsection}}} only *styles* the
+    # printed number -- a reader sees "1.1", not "{\bf1}.1". Mirrors 1604.07787.
+    from arxitex.lib.statement.methods.regex.log_envs import _clean_ref
+
+    assert _clean_ref(r"{\bf5}") == "5"
+    assert _clean_ref(r"{\bf1}.2") == "1.2"
+    assert _clean_ref(r"\textbf{A}.3") == "A.3"
+    assert _clean_ref("1.2") == "1.2"          # ordinary refs pass through
+
+    src = r"""
+    \newtheorem{theorem}{Theorem}[subsection]
+    \renewcommand{\thesubsection}{{\bf\arabic{subsection}}}
+    \begin{document}
+    \subsection{First}
+    \begin{theorem}\label{t}A real statement of a theorem.\end{theorem}
+    \end{document}
+    """
+    thm = next(e for e in log_envs(src) if e.raw_env == "theorem")
+    assert thm.ref == "1.1"
+
+
 def test_leading_parenthetical_is_captured_as_a_note():
     # some authors open a proof body with "(of Theorem ...)" instead of the
     # bracketed [..] argument; it serves the same role, so capture it as a note.
