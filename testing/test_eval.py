@@ -113,6 +113,40 @@ def test_pdf_flags_a_missing_proof_when_recorded():
     assert [d.field for d in report.matched[0].diffs] == ["proof"]
 
 
+def test_identical_bodies_are_paired_by_kind_and_number():
+    # a paper that proves a conjecture restates it verbatim as the theorem, so
+    # the two bodies are indistinguishable and only kind/number can tell them
+    # apart. Mirrors arXiv:0904.0841, where they were paired crosswise.
+    same = "Given m at least two the sequence attains its minimum at the endpoint"
+    gt = PdfGroundTruth(arxiv_id="0000.00000", statements=[
+        {"kind": "conjecture", "number": "1.1", "body": same},
+        {"kind": "theorem", "number": "2.1", "body": same},
+    ])
+    parsed = [
+        Statement(kind="conjecture", ref="1.1", body=same),
+        Statement(kind="theorem", ref="2.1", body=same),
+    ]
+    report = score_pdf(parsed, gt)
+    assert report.tp == 2
+    assert report.clean, [str(d) for v in report.matched for d in v.diffs]
+
+
+def test_body_outweighs_number_when_the_two_disagree():
+    # the tie-breakers must never override content: a statement with the right
+    # body but the wrong number still aligns, and the bad number is reported.
+    gt = PdfGroundTruth(arxiv_id="0000.00000", statements=[
+        {"kind": "theorem", "number": "1.1", "body": "Alpha beta gamma delta epsilon zeta"},
+    ])
+    parsed = [
+        Statement(kind="theorem", ref="7.7", body="Alpha beta gamma delta epsilon zeta"),
+        Statement(kind="theorem", ref="1.1", body="Entirely unrelated words concerning turtles"),
+    ]
+    report = score_pdf(parsed, gt)
+    assert report.tp == 1
+    assert report.matched[0].parsed.ref == "7.7"          # matched on content
+    assert [d.field for d in report.matched[0].diffs] == ["number"]
+
+
 def test_pdf_reports_phantoms_and_misses():
     gt = PdfGroundTruth(arxiv_id="0000.00000", statements=[
         {"kind": "theorem", "number": "1.1", "body": "Alpha beta gamma delta epsilon."},

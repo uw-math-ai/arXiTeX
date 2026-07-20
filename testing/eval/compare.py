@@ -133,18 +133,43 @@ def _gt_snippet(g) -> str: return _snippet(getattr(g, "body", ""))
 
 # --- alignment -------------------------------------------------------------
 
-def _greedy_align(scores: list[tuple[float, int, int]]):
-    """Assign gt<->parsed pairs greedily, best score first, above threshold."""
-    scores.sort(reverse=True)
+# Tie-breakers only. A paper that proves a conjecture restates it verbatim as a
+# theorem, so two statements can have indistinguishable bodies; kind and number
+# then decide which is which. These are far too small to override a real
+# difference in body, so a misnumbered statement still aligns on content and its
+# bad number is still reported — alignment stays content-first by design.
+_KIND_AFFINITY = 0.02
+_REF_AFFINITY = 0.01
+
+
+def _affinity(g, p: Statement) -> float:
+    """Nudge for a gt/parsed pair that also agrees on kind and/or number."""
+    bonus = 0.0
+    if _norm_kind(_gt_kind(g)) == _norm_kind(p.kind):
+        bonus += _KIND_AFFINITY
+    ref = _gt_ref(g)
+    if ref is not None and _norm_ref(ref) == _norm_ref(p.ref):
+        bonus += _REF_AFFINITY
+    return bonus
+
+
+def _greedy_align(scores: list[tuple[float, float, int, int]]):
+    """Assign gt<->parsed pairs greedily, best first, above threshold.
+
+    Each entry is ``(rank, body, gt_index, parsed_index)``: *rank* orders the
+    candidates (body plus tie-breakers) while *body* alone must clear the
+    threshold, so the nudges never manufacture a match on their own.
+    """
+    scores.sort(key=lambda t: (-t[0], t[2], t[3]))     # deterministic ordering
     used_g: set[int] = set()
     used_p: set[int] = set()
     pairs: list[tuple[int, int, float]] = []
-    for sc, gi, pi in scores:
-        if sc < MATCH_THRESHOLD or gi in used_g or pi in used_p:
+    for _rank, body, gi, pi in scores:
+        if body < MATCH_THRESHOLD or gi in used_g or pi in used_p:
             continue
         used_g.add(gi)
         used_p.add(pi)
-        pairs.append((gi, pi, sc))
+        pairs.append((gi, pi, body))
     return pairs, used_g, used_p
 
 
@@ -166,9 +191,10 @@ def score_tex(parsed: Sequence[Statement], gt: TexGroundTruth, config: str = "")
     gts = gt.statements
     pw = [to_words(p.body) for p in parsed]
     scores = [
-        (overlap(to_words(g.body), pw[i]), gi, i)
+        (body + _affinity(g, parsed[i]), body, gi, i)
         for gi, g in enumerate(gts)
         for i in range(len(parsed))
+        if (body := overlap(to_words(g.body), pw[i])) is not None
     ]
     pairs, used_g, used_p = _greedy_align(scores)
     matched = [
@@ -219,9 +245,10 @@ def score_pdf(parsed: Sequence[Statement], gt: PdfGroundTruth, config: str = "")
     kept = [p for p in parsed if _norm_kind(p.kind) not in _EXCLUDED_KINDS]
     pw = [to_words(p.body) for p in kept]
     scores = [
-        (pattern_score(g.body, pw[i]), gi, i)
+        (body + _affinity(g, kept[i]), body, gi, i)
         for gi, g in enumerate(gt.statements)
         for i in range(len(kept))
+        if (body := pattern_score(g.body, pw[i])) is not None
     ]
     pairs, used_g, used_p = _greedy_align(scores)
 
