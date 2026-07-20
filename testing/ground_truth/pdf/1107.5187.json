@@ -1,0 +1,50 @@
+{
+  "arxiv_id": "1107.5187",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-19",
+  "note": "2011 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Consider ... Then the following are equivalent ..."
+    },
+    {
+      "kind": "notation",
+      "number": "1.2",
+      "body": "Throughout the article ... will denote a commutative ... that is ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.3",
+      "body": "Let ... Suppose that for all ...",
+      "proof": "If we fix ... then owing to the assumptions ... This completes the proof of ..."
+    },
+    {
+      "kind": "definition",
+      "number": "1.4",
+      "body": "Let ... be commutative ... with the norm ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "1.5",
+      "body": "Let ... Then the following are equivalent ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.6",
+      "body": "Let ... Then ... is exponentially stable if and only if ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.1",
+      "body": "Let ... be the set of matrix tuples ... is continuous.",
+      "proof": "The proof is the same as ... for example in ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.2",
+      "body": "Let ... be continuous functions on ... of the joint spectrum ..."
+    }
+  ]
+}

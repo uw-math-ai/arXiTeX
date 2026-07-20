@@ -1,0 +1,40 @@
+{
+  "arxiv_id": "1604.07702",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-18",
+  "note": "2016 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Any connected negatively curved ... rank one."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.2",
+      "body": "Any ... Finsler space with negative ... type."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.3",
+      "body": "Let ... be a simply connected solvable Lie group ... positive real parts ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.1",
+      "body": "Let ... be a connected homogeneous Finsler space ... decomposition."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.1",
+      "body": "Keep the above notation and assumptions ... constant length of ...",
+      "proof": "We first prove that ... vector field of constant length."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.1",
+      "body": "Let ... be a left invariant negatively curved ... must satisfy ...",
+      "proof": "Since ... is solvable ... has only a one-dimensional kernel ..."
+    }
+  ]
+}

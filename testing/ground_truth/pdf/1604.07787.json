@@ -1,0 +1,32 @@
+{
+  "arxiv_id": "1604.07787",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-19",
+  "note": "2016 paper, statements read number then type",
+  "statements": [
+    {
+      "kind": "proposition",
+      "number": "5",
+      "body": "For a connected oriented ... we have ...",
+      "proof": "We first choose a smooth decreasing function ... is small enough."
+    },
+    {
+      "kind": "lemma",
+      "number": "6",
+      "body": "Let ... be an oriented connected manifold ... such that ...",
+      "proof": "We first construct ... is as above."
+    },
+    {
+      "kind": "theorem",
+      "number": "7",
+      "body": "Let ... be a compact connected smooth ... on ...",
+      "proof": "We first prove the theorem ... all required properties."
+    },
+    {
+      "kind": "theorem",
+      "number": "9",
+      "body": "For an oriented connected ... bilinear form ...",
+      "proof": "Note first that ... with some obvious changes."
+    }
+  ]
+}

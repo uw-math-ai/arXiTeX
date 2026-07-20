@@ -1,0 +1,70 @@
+{
+  "arxiv_id": "1807.09321",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-20",
+  "note": "2018 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1",
+      "body": "Let ... be a finite semigroup ... linear conjugates if and only if ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2",
+      "body": "Let ... be a finite semigroup and ... be a field ... if and only if ...",
+      "proof": "Assume that ... has characteristic ... This completes the proof."
+    },
+    {
+      "kind": "theorem",
+      "number": "3",
+      "body": "Let ... be a linear operator ... then ... and ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4",
+      "body": "Let ... be linear operators ... for all ...",
+      "proof": "Trivially, if ... This proves that ... are conjugate."
+    },
+    {
+      "kind": "proposition",
+      "number": "5",
+      "body": "Let ... be a representation of a finite semigroup and put ... and ...",
+      "proof": "Choose ... such that ... is idempotent."
+    },
+    {
+      "kind": "lemma",
+      "number": "6",
+      "body": "Let ... be permutation matrices. Then ... symmetric group ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "7",
+      "body": "Let ... be a field of characteristic ... as above.",
+      "proof": "First note that since ... and split over ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "8",
+      "body": "Let ... Then the following are equivalent ...",
+      "proof": "... shows that ... This completes the proof."
+    },
+    {
+      "kind": "theorem",
+      "number": "9",
+      "body": "Two elements of ... are linear conjugates if and only if ... by an element of ...",
+      "proof": "Clearly, if ... are conjugate by an element ... by an element of ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "10",
+      "body": "Let ... be a prime power ... by an element of ...",
+      "proof": "Clearly, if ... are similar ... are similar."
+    },
+    {
+      "kind": "theorem",
+      "number": "11",
+      "body": "Let ... be a finite group and ... a field ... and are ... equivalent."
+    }
+  ]
+}

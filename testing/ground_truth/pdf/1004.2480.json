@@ -1,0 +1,79 @@
+{
+  "arxiv_id": "1004.2480",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-19",
+  "note": "2010 paper",
+  "statements": [
+    {
+      "kind": "proposition",
+      "number": "1.1",
+      "body": "Let ... be a finite separable extension of local fields ... if and only if ...",
+      "proof": "For any ... let us consider the map ... This completes the proof of ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "1.2",
+      "body": "Let ... be a finite Galois extension of local fields ... if and onyl if ...",
+      "proof": "If ... is not totally ramified .. are normal basis generators for ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.3",
+      "body": "Let ... be a totally ramified Kummer extension ... Kummer extension of ...",
+      "proof": "Suppose that ... is of exponent ... The result now follows by noting that ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.4",
+      "body": "Let ... be a totally ramified abelian extension of local fields ... Kummer extension.",
+      "proof": "Let us first assume ... this implies that ... holds."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.1",
+      "body": "For every ... we have ...",
+      "proof": "Let ... be a subset of ... such that ... It follows that ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.2",
+      "body": "Let ... For every ... is the complement in ... of the set ...",
+      "proof": "For non-zero ... and ... so they are equal."
+    },
+    {
+      "kind": "corollary",
+      "number": "3.4",
+      "body": "If ... are finite extensions of local fields ... implies ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.5",
+      "body": "Let ... be a totally ramified Galois extension ... we have ...",
+      "proof": "Put ... Note first that ... it follows that ... holds."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.2",
+      "body": "If ... is an abelian extension ... is cyclic over ...",
+      "proof": "Let ... be a minimal non-zero ... now follows from ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.3",
+      "body": "Let ... be a Galois extension of local fields and let ... unity of order ... then ...",
+      "proof": "Suppose that ... is normal over ... and it follows that ... holds."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.4",
+      "body": "Let ... be a totally ramified abelian extension of local fields ... is a Kummer extension then ... holds.",
+      "proof": "Put ... and ... Let ... By ... it then follows that ... holds."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.5",
+      "body": "Let ... be a totally ramified cyclic extension ... we then have ...",
+      "proof": "If ... is a generator of ... Our statement now follows with ..."
+    }
+  ]
+}

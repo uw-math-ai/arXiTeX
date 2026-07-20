@@ -1,0 +1,43 @@
+{
+  "arxiv_id": "1305.5963",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-19",
+  "note": "2014 paper",
+  "statements": [
+    {
+      "kind": "lemma",
+      "number": "2.1",
+      "body": "Let ... be arbitrary. For every ... we have ... and ..." 
+    },
+    {
+      "kind": "proposition",
+      "number": "2.1",
+      "body": "Let ... Then we have ... with limits taken pointwise.",
+      "proof": "It is easy to see that ... monotone convergence theorem."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.2",
+      "body": "Suppose that ... on ... Then ...",
+      "proof": "Let ... be the Radon-Nikodym derivative ... we obtain the statement."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.1",
+      "body": "Suppose that ... on .. Then ...",
+      "proof": "Denote by ... Here we apply the elementary ... is finished by ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.2",
+      "body": "The following equality holds ... Similarly ...",
+      "proof": "The proof is similar to that of ... Therefore ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.2",
+      "body": "Suppose that ... on ... Then ...",
+      "proof": "We observe that for a given ... the limit ... monotone convergence theorem."
+    }
+  ]
+}

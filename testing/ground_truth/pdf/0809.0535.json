@@ -1,0 +1,102 @@
+{
+  "arxiv_id": "0809.0535",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-19",
+  "note": "2008 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "If ... is a field then ... over their intersection."
+    },
+    {
+      "kind": "algorithm",
+      "number": "1.1",
+      "body": "Input ... Let ... If ... If ... else stop ..."
+    },
+    {
+      "kind": "definition",
+      "number": "1.1",
+      "body": "Let ... Then ... stably tame if there exists ... where ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.1",
+      "body": "Let ... be a domain ... its fraction field ... for some ...",
+      "proof": "Let ... where ... This implies that ... and both ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.1",
+      "body": "... Length of ... is the smallest natural number ... is of length ..."
+    },
+    {
+      "kind": "remark",
+      "number": "2.1",
+      "body": "If ... as above and ... then ... is tamely equivalent ... is stably tame."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.1",
+      "body": "Let ... be a field of characteristic zero and ... with one more variable."
+    },
+    {
+      "kind": "definition",
+      "number": "3.1",
+      "body": "... There exists ... and ... There exists ... and ..."
+    },
+    {
+      "kind": "definition",
+      "number": "3.2",
+      "body": "... and ... we define ... by induction on ... Berson's polynomials ..."
+    },
+    {
+      "kind": "definition",
+      "number": "3.3",
+      "body": "... Stably tame polynomial ... A polynomial ... Totally stably tame polynomial ... such that ... and ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.1",
+      "body": "If ... where ... is a ... then ... is totally stably tame"
+    },
+    {
+      "kind": "remark",
+      "number": "3.1",
+      "body": "... If ... is totally stably tame ... tame automorphism ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.1",
+      "body": "Suppose ... is a ... such that ... for all .. and for all ... is stably tame."
+    },
+    {
+      "kind": "remark",
+      "number": "4.1",
+      "body": "... for all ... and ... for all ... if ... is a regular ring."
+    },
+    {
+      "kind": "remark",
+      "number": "4.2",
+      "body": "In ... recently proved that if ... require the ring to be regular."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.1",
+      "body": "Let ... and ... where ... not have any common factors in ...",
+      "proof": "We rewrite ... has no common factors in ... with ... the result follows."
+    },
+    {
+      "kind": "lemma",
+      "number": "5.1",
+      "body": "We use notations from the ... Let ... be an irreducible factor ... following polynomials ...",
+      "proof": "Since ... from ... and ... we get the following ... to conclude that ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "5.2",
+      "body": "Let ... where ... Then ... for ... and a ...",
+      "proof": "Since ... by ... we have that ... So ... and we are done."
+    }
+  ]
+}
