@@ -805,8 +805,78 @@ def log_envs(tex: str) -> list[Environment]:
                 body_end   = tok_start,
             ))
 
+    _add_text_proofs(results, clean, macros)
+    results.sort(key=lambda e: e.end_pos)   # keep document order after the merge
     _resolve_nesting(results, clean, macros, thm_defs)
     return results
+
+
+###############################################################################
+# Proofs written as styled text rather than an environment
+###############################################################################
+
+# Older papers often mark a proof with styled text instead of \begin{proof}:
+#   \noindent {\it Proof.} ... \qed          \textbf{Proof.} ... \qed
+# and frequently behind a macro, e.g. \def\pf{\noindent {\it Proof.\ }}.
+_PROOF_TEXT_RE = re.compile(
+    r"\{\s*\\(?:it|bf|em|sl|itshape|bfseries|slshape|scshape)\s+"   # {\it Proof
+    r"|\\(?:textit|textbf|textsl|textsc|emph)\s*\{\s*"              # \textit{Proof
+)
+_PROOF_WORD_RE = re.compile(r"Proof\b\s*[.:]?", re.IGNORECASE)
+# Only a QED closes such a proof — without one there is no way to bound it.
+_QED_RE = re.compile(r"\\(?:qed|qedsymbol|endproof|qedhere)\b")
+# Styling left over right after the marker: the group's "}", a "\ " spacer, ...
+_MARKER_TAIL_RE = re.compile(r"(?:\s|\}|\\[ ,;:!])+")
+_DOC_BEGIN_RE = re.compile(r"\\begin\s*\{\s*document\s*\}")
+
+
+def _proof_marker_re(macros: dict[str, tuple[int, str]]) -> re.Pattern:
+    """Matcher for a text proof's opening marker, including macros that expand
+    to one (``\\pf``)."""
+    # group the styling alternation, or its trailing branch would match on its
+    # own and the marker would stop before the word "Proof"
+    alts = [f"(?:{_PROOF_TEXT_RE.pattern})(?:{_PROOF_WORD_RE.pattern})"]
+    for name, (_nargs, body) in macros.items():
+        if _PROOF_TEXT_RE.search(body) and _PROOF_WORD_RE.search(body):
+            alts.append(re.escape(name) + r"(?![a-zA-Z@])")
+    return re.compile("|".join(f"(?:{a})" for a in alts))
+
+
+def _add_text_proofs(
+    results: list[Environment],
+    clean: str,
+    macros: dict[str, tuple[int, str]],
+) -> None:
+    """Append proofs written as styled text, each bounded by its QED.
+
+    A marker with no QED after it is ignored: we would be guessing where the
+    proof ends, and a wrong guess swallows whatever follows.
+    """
+    marker = _proof_marker_re(macros)
+    covered = [(e.begin_pos, e.end_pos) for e in results if e.raw_env == "proof"]
+
+    # Start after \begin{document}: the preamble defines the very macros we look
+    # for (\def\pf{...{\it Proof.\ }}), and matching those would invent a proof.
+    doc = _DOC_BEGIN_RE.search(clean)
+    start = doc.end() if doc else 0
+
+    for m in marker.finditer(clean, start):
+        if any(a <= m.start() < b for a, b in covered):
+            continue                                  # already a proof environment
+        qed = _QED_RE.search(clean, m.end())
+        if qed is None:
+            continue                                  # unbounded — ignore it
+        nxt = marker.search(clean, m.end())
+        if nxt is not None and nxt.start() < qed.start():
+            continue                                  # would swallow the next proof
+        tail = _MARKER_TAIL_RE.match(clean, m.end())
+        results.append(Environment(
+            env="proof", raw_env="proof", ref=None, note=None, labels=[], body="",
+            begin_line=clean.count("\n", 0, m.start()) + 1,
+            end_line=clean.count("\n", 0, qed.end()) + 1,
+            begin_pos=m.start(), end_pos=qed.end(),
+            body_start=tail.end() if tail else m.end(), body_end=qed.start(),
+        ))
 
 
 ###############################################################################

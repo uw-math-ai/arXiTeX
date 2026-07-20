@@ -131,6 +131,59 @@ def test_leading_parenthetical_is_captured_as_a_note():
     assert proof.body.startswith("The argument")   # the parenthetical is not in the body
 
 
+def _proofs(src):
+    return [e for e in log_envs(src) if e.raw_env == "proof"]
+
+
+def test_text_proof_closed_by_qed_is_captured():
+    # older papers style a proof instead of using \begin{proof} (arXiv:0904.0841)
+    src = r"""
+    \newtheorem{theorem}{Theorem}
+    \begin{document}
+    \begin{theorem}\label{t}A real statement of a theorem.\end{theorem}
+    \noindent {\it Proof.} It follows from the definition above. \qed
+    \end{document}
+    """
+    proofs = _proofs(src)
+    assert len(proofs) == 1
+    assert proofs[0].body.startswith("It follows from the definition")
+
+
+def test_text_proof_without_a_qed_is_ignored():
+    # nothing bounds it, so guessing where it ends would swallow the rest
+    src = r"""
+    \begin{document}
+    \noindent {\it Proof.} This runs on and nothing ever closes it off.
+    \end{document}
+    """
+    assert _proofs(src) == []
+
+
+def test_text_proof_behind_a_macro_is_captured_but_its_definition_is_not():
+    # \pf expands to a marker; the \def in the preamble must not itself count
+    src = r"""
+    \def\pf{\noindent {\it Proof.\ }}
+    \def\qed{\hfill\rule{4pt}{7pt}}
+    \newtheorem{thm}{Theorem}
+    \begin{document}
+    \begin{thm}\label{t}A real statement of a theorem.\end{thm}
+    \pf The argument is short and complete. \qed
+    \end{document}
+    """
+    proofs = _proofs(src)
+    assert len(proofs) == 1
+    assert "argument is short" in proofs[0].body
+
+
+def test_text_marker_inside_a_proof_environment_is_not_double_counted():
+    src = r"""
+    \begin{document}
+    \begin{proof} {\it Proof.} of the claim, restated inline. \qed \end{proof}
+    \end{document}
+    """
+    assert len(_proofs(src)) == 1
+
+
 def test_starred_env_names_still_match():
     # the widened begin/end matcher must not regress starred environments
     src = r"""
