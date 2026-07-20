@@ -35,42 +35,52 @@ def norm_body(text: str | None) -> str | None:
     return text.strip()
 
 
-# --- math-free prose tokens (pdf mode) ------------------------------------
+# --- comparable word tokens (pdf mode) ------------------------------------
 
-_MATH_ENVS = ("equation", "align", "gather", "multline", "eqnarray", "displaymath", "math", "split")
-_MATH_ENV_RE = re.compile(
-    r"\\begin\s*\{(" + "|".join(_MATH_ENVS) + r")\*?\}.*?\\end\s*\{\1\*?\}",
-    re.DOTALL,
-)
-_INLINE_MATH_RES = [
-    re.compile(r"\$\$.*?\$\$", re.DOTALL),
-    re.compile(r"\$.*?\$", re.DOTALL),
-    re.compile(r"\\\(.*?\\\)", re.DOTALL),
-    re.compile(r"\\\[.*?\\\]", re.DOTALL),
-]
+# Commands that only control presentation or structure. A reader never
+# transcribes their *name*, so drop the name but keep whatever they wrap.
+_LAYOUT_CMDS = frozenset("""
+    left right middle
+    big bigl bigr bigm Big Bigl Bigr Bigm bigg biggl biggr Bigg Biggl Biggr
+    quad qquad enspace thinspace hspace vspace phantom hphantom vphantom
+    displaystyle textstyle scriptstyle scriptscriptstyle limits nolimits
+    mathbf mathrm mathcal mathbb mathfrak mathsf mathtt mathit mathnormal
+    boldsymbol pmb bm textbf textit textrm texttt textsf textnormal emph text
+    mbox hbox operatorname ensuremath
+    bf rm it sf tt em normalfont itshape bfseries
+    frac dfrac tfrac cfrac over atop binom choose sqrt
+    nonumber notag
+""".split())
+
 _LABEL_REF_RE = re.compile(r"\\(?:label|ref|eqref|cite|autoref|cref|Cref)\s*\{[^}]*\}")
-_CMD_RE = re.compile(r"\\[a-zA-Z@]+\*?")
+_ENV_WRAPPER_RE = re.compile(r"\\(?:begin|end)\s*\{[^}]*\}")
+_MATH_DELIM_RE = re.compile(r"\$\$|\$|\\\[|\\\]|\\\(|\\\)")
+_CMD_RE = re.compile(r"\\([a-zA-Z@]+)\*?")
 _NONWORD_RE = re.compile(r"[^a-z0-9]+")
 
 
-def strip_math(text: str) -> str:
-    """Remove display-math environments and inline/display math delimiters."""
-    text = _MATH_ENV_RE.sub(" ", text)
-    for r in _INLINE_MATH_RES:
-        text = r.sub(" ", text)
-    return text
+def _cmd_word(m: re.Match) -> str:
+    """Layout commands contribute nothing; any other keeps its name as a word,
+    so ``\\omega`` becomes "omega" — what an annotator would write."""
+    return " " if m.group(1) in _LAYOUT_CMDS else f" {m.group(1)} "
 
 
 def to_words(text: str) -> list[str]:
-    """Reduce a LaTeX body (or a ground-truth snippet) to lowercase prose tokens."""
+    """Reduce a LaTeX body (or an annotation snippet) to comparable word tokens.
+
+    Math is deliberately **not** discarded. Annotations spell a symbol out as a
+    word, else a letter, else a number, so the parsed side has to surface those
+    too — otherwise a statement whose body is all math has nothing to match on.
+    ``$s_{\\mathbf{u}}(\\Delta_p)$`` becomes ``["s", "u", "delta", "p"]``.
+    """
     if not text:
         return []
     text = _LABEL_REF_RE.sub(" ", text)
-    text = strip_math(text)
-    text = _CMD_RE.sub(" ", text)                 # drop control words, keep brace contents
+    text = _ENV_WRAPPER_RE.sub(" ", text)     # \begin{align} wrappers, keep the content
+    text = _MATH_DELIM_RE.sub(" ", text)      # $ \[ \] \( \) — delimiters only
+    text = _CMD_RE.sub(_cmd_word, text)
     text = text.replace("{", " ").replace("}", " ").replace("~", " ")
-    text = text.lower()
-    return [w for w in _NONWORD_RE.split(text) if w]
+    return [w for w in _NONWORD_RE.split(text.lower()) if w]
 
 
 def overlap(needle: list[str], haystack: list[str]) -> float:

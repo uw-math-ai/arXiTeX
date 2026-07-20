@@ -30,8 +30,24 @@ def test_norm_body_absorbs_benign_spacing_differences():
     assert norm_body(None) is None
 
 
-def test_to_words_strips_math_and_markup():
-    assert to_words(r"A \emph{norm} on $\mathbb{R}^n$ is nice") == ["a", "norm", "on", "is", "nice"]
+def test_to_words_keeps_math_symbols_as_words():
+    # Annotations spell symbols out (word, else letter, else number), so the
+    # parsed side must surface them too — markup is dropped, content is kept.
+    assert to_words(r"A \emph{norm} on $\mathbb{R}^n$ is nice") == [
+        "a", "norm", "on", "r", "n", "is", "nice"
+    ]
+    # a body that is *only* math still yields tokens to match on
+    assert to_words(r"$s_{\mathbf{u}}(\Delta_p)$") == ["s", "u", "delta", "p"]
+    # layout/font commands contribute no words of their own
+    assert "mathbf" not in to_words(r"$\mathbf{x}$")
+    assert "frac" not in to_words(r"$\frac{a}{b}$")
+
+
+def test_all_math_statement_can_match_its_annotation():
+    # the fairness bug: an all-math body used to reduce to [] and could never
+    # match, while the annotation recorded the letters (arXiv:0906.0734)
+    body = r"$\omega \in s_{\mathbf{u}}(\Delta_p) \Leftrightarrow \omega \in \Delta_p$"
+    assert pattern_score("... s ... u ... p ...", to_words(body)) == 1.0
 
 
 # --- elided pattern matching (pdf mode) ------------------------------------
