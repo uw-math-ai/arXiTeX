@@ -857,11 +857,13 @@ def _resolve_nesting(
     for env in sorted(results, key=lambda e: e.body_end - e.body_start):
         raw = clean[env.body_start:env.body_end]
 
-        # Splice out nested statements so their text (and labels) don't bleed
-        # into the enclosing env. A statement/proof — whose body we keep —
-        # references the inner one by \ref; everything else (a section wrapper,
-        # a figure, the document) just drops it, since its body is discarded.
-        nested = [c for c in results if is_stmt(c) and strictly_inside(c, env)]
+        # Splice out nested statements and proofs so their text (and labels)
+        # don't bleed into the enclosing env. A statement/proof — whose body we
+        # keep — references the inner one by \ref; everything else (a section
+        # wrapper, a figure, the document) just drops it, since its body is
+        # discarded. Nesting a proof inside a proof is common: a long proof
+        # states and proves auxiliary lemmas along the way.
+        nested = [c for c in results if is_extracted(c) and strictly_inside(c, env)]
         direct = [c for c in nested
                   if not any(strictly_inside(c, o) for o in nested)]
         for child in sorted(direct, key=lambda c: c.begin_pos, reverse=True):
@@ -874,7 +876,7 @@ def _resolve_nesting(
         # out. A nested statement with none gets a synthetic one, so the
         # reference to it has a target and the extracted statement has an id.
         own = [l.strip() for l in _LABEL_RE.findall(raw)]
-        if not own and is_stmt(env) and has_extracted_parent[id(env)]:
+        if not own and is_extracted(env) and has_extracted_parent[id(env)]:
             own = [synth_label(env)]
         env.labels = own
         env.body = re.sub(r"\s+", " ", _expand_macros(_LABEL_RE.sub("", raw), macros)).strip()

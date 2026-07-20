@@ -25,21 +25,33 @@ def _referenced_labels(text: str) -> set:
     return out
 
 
+def _inside(inner: Statement, outer: Statement) -> bool:
+    """Whether *inner* sits within *outer* in the source (when spans are known)."""
+    if None in (inner.begin_pos, inner.end_pos, outer.begin_pos, outer.end_pos):
+        return False
+    return outer.begin_pos < inner.begin_pos and inner.end_pos <= outer.end_pos
+
+
 def _adjacent_target(statements: List[Statement], proof_idx: int):
     """Index of the statement a note-less proof proves: the nearest preceding
-    provable statement, skipping over commentary and the proof's own nested
-    statements. None if there isn't one."""
-    # A statement nested inside this proof is spliced out of the proof body and
-    # replaced by a \ref to it, so it appears just before the proof in the list
-    # even though it's part of it. Skip those rather than stop on them.
-    nested = _referenced_labels(statements[proof_idx].body)
+    provable statement, skipping over commentary and over the proof's own nested
+    content. None if there isn't one."""
+    proof = statements[proof_idx]
+    # A long proof may state and prove auxiliary lemmas along the way. Those are
+    # part of the proof, but they close before it does, so they sit just before
+    # it in the list. Step over them — by source span where we have one, else by
+    # the \refs the proof body makes to the statements spliced out of it.
+    referenced = _referenced_labels(proof.body)
     j = proof_idx - 1
     while j >= 0:
         prev = statements[j]
+        if _inside(prev, proof):
+            j -= 1                      # the proof's own nested statement or proof
+            continue
         if prev.kind in THEOREM_KINDS:
             return j
-        if prev.kind in _COMMENTARY_KINDS or any(l in nested for l in prev.labels):
-            j -= 1                      # a digression, or the proof's own nested statement
+        if prev.kind in _COMMENTARY_KINDS or any(l in referenced for l in prev.labels):
+            j -= 1                      # a digression between statement and proof
             continue
         return None                     # a definition, example, another proof, ... — stop
     return None

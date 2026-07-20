@@ -98,6 +98,8 @@ def parse(
                 labels=env.labels,
                 body=env.body,
                 proof=None,
+                begin_pos=env.begin_pos,
+                end_pos=env.end_pos,
                 pre_context=_pre_context(clean, env.begin_pos, context, stmt_end_pat),
                 post_context=_post_context(clean, env.end_pos, context, stmt_begin_pat),
             )
@@ -112,6 +114,8 @@ def parse(
             labels=env.labels,
             body=env.body,
             proof=None,
+            begin_pos=env.begin_pos,
+            end_pos=env.end_pos,
         )
         for env in envs
     ]

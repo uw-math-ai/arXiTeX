@@ -55,6 +55,11 @@ class Statement(BaseModel):
     proof: Optional[str] = None
     pre_context: Optional[str] = None
     post_context: Optional[str] = None
+    # Character span in the flattened source, when the method knows it. Used to
+    # tell whether one statement sits inside another (a proof that states an
+    # auxiliary lemma along the way). Runtime-only: kept out of the output.
+    begin_pos: Optional[int] = Field(default=None, exclude=True, repr=False)
+    end_pos: Optional[int] = Field(default=None, exclude=True, repr=False)
 
 
 class ValidationLevel(str, Enum):

@@ -119,6 +119,26 @@ def test_adjacency_skips_the_proofs_own_nested_statement():
     assert by_label["fct:inner"].proof is None
 
 
+def test_adjacency_skips_lemmas_nested_inside_the_proof_itself():
+    # A long proof states and proves auxiliary lemmas along the way. Those close
+    # before it does, so they sit just before it in the list -- but they belong
+    # to it, and the proof is the theorem's. Mirrors arXiv:0906.0734.
+    #   theorem [0..100]  proof [110..900] { lemma [200..300], proof [310..400] }
+    out = connect_proofs([
+        Statement(kind="theorem", labels=["thm:main"], body="The main theorem.",
+                  begin_pos=0, end_pos=100),
+        Statement(kind="lemma", labels=["lem:aux"], body="An auxiliary lemma.",
+                  begin_pos=200, end_pos=300),
+        Statement(kind="proof", body="Proof of the auxiliary lemma.",
+                  begin_pos=310, end_pos=400),
+        Statement(kind="proof", body=r"Set things up, use \ref{lem:aux}, done.",
+                  begin_pos=110, end_pos=900),
+    ])
+    by_label = {lab: s for s in out for lab in s.labels}
+    assert by_label["thm:main"].proof.startswith("Set things up")   # the outer proof
+    assert by_label["lem:aux"].proof == "Proof of the auxiliary lemma."
+
+
 def test_adjacency_does_not_walk_back_past_a_definition():
     # only commentary (remark/note/...) is skipped; a definition is substantive,
     # so a proof after one does not reach back to an earlier theorem
