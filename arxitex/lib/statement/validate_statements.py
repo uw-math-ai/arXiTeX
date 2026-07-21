@@ -55,7 +55,7 @@ def _validate_uniqueness(statements: List[Statement]):
     for statement in statements:
         name = " ".join(p for p in [
             statement.kind.capitalize(),
-            statement.ref,
+            statement.number,
             f"({statement.note})" if statement.note else None
         ] if p is not None)
 
@@ -65,7 +65,7 @@ def _validate_uniqueness(statements: List[Statement]):
                 f"Multiple statements have the same name: `{name}`"
             ))
 
-        elif statement.ref or statement.note:
+        elif statement.number or statement.note:
             names.add(name)
 
 def validate_statement(statement: Statement):

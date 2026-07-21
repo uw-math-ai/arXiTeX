@@ -74,9 +74,9 @@ def _build_prompt(chunk: str, kinds: Set[str]) -> str:
         "Extract every mathematical statement of these kinds from the LaTeX "
         f"source below: {kind_list}.\n\n"
         "Return ONLY a JSON array. Each element is an object with keys:\n"
-        '  "kind"  (one of the kinds above, lowercased),\n'
-        '  "ref"   (the statement number as displayed, e.g. "1.1", or null),\n'
-        '  "note"  (the title/note in brackets, or null),\n'
+        '  "kind"   (one of the kinds above, lowercased),\n'
+        '  "number" (the statement number as displayed, e.g. "1.1", or null),\n'
+        '  "note"   (the title/note in brackets, or null),\n'
         '  "label" (the \\label key, or null),\n'
         '  "body"  (the LaTeX body, copied verbatim, without the \\begin/\\end tags),\n'
         '  "proof" (the LaTeX of its proof if present in this source, else null).\n\n'
@@ -108,7 +108,7 @@ def _parse_response(content: str, kinds: Set[str]) -> List[Statement]:
         label = (it.get("label") or "").strip()
         out.append(Statement(
             kind=kind,
-            ref=(it.get("ref") or None),
+            number=(it.get("number") or None),
             note=(it.get("note") or None),
             labels=[label] if label else [],
             body=body,

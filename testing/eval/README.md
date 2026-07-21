@@ -1,7 +1,7 @@
 # Parser eval
 
 Score a parser's **output** against ground truth, so you can see which configs
-fail and where. Ground truth is authored by a human today; the `model` field
+fail and where. Ground truth is authored by a human today; the `annotator` field
 leaves room for an LLM to author it later.
 
 ## This is not a test suite
@@ -32,7 +32,7 @@ testing/
 |---|---|---|
 | Source | local `.tex` file/folder (`tex_source`) | arXiv paper (`arxiv_id`) |
 | Ground truth | the **full expected parse** | only what's **visible in the PDF** |
-| Checked | `kind`, `ref`, `note`, `labels`, full `body`, `proof` | `kind`, `body`, plus `number`/`proof` *if recorded* |
+| Checked | `kind`, `number`, `note`, `labels`, full `body`, `proof` | `kind`, `body`, plus `number`/`proof` *if recorded* |
 | Purpose | catch runtime bugs in a parser | catch phantoms, misses, misnumbering |
 
 Both align parsed statements to ground truth **by body content** — never by
@@ -52,7 +52,7 @@ rather than failing outright.
 ```json
 {
   "arxiv_id": "2507.08642",
-  "model": "human",
+  "annotator": "human",
   "date": "2026-07-15",
   "note": "Uses tikz",
   "statements": [
@@ -87,9 +87,9 @@ between the regex and tex engines).
 ```json
 {
   "tex_source": "testing/fixtures/simple",
-  "model": "human",
+  "annotator": "human",
   "statements": [
-    { "kind": "theorem", "ref": "1.2", "note": "Nonnegativity", "labels": ["thm:main"],
+    { "kind": "theorem", "number": "1.2", "note": "Nonnegativity", "labels": ["thm:main"],
       "body": "For every $x \\in \\mathbb{R}^n$ ...", "proof": "Immediate from ..." }
   ]
 }

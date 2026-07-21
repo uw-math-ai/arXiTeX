@@ -77,7 +77,7 @@ def _pdf_gt(**stmt):
 def test_pdf_ignores_fields_that_were_not_recorded():
     # no `number` and no `proof` recorded -> parser's ref/proof are not checked
     gt = _pdf_gt(kind="theorem", body="Every bounded sequence ... converges.")
-    parsed = [Statement(kind="theorem", ref="9.9", body="Every bounded sequence of reals converges.",
+    parsed = [Statement(kind="theorem", number="9.9", body="Every bounded sequence of reals converges.",
                         proof="Trivial.")]
     report = score_pdf(parsed, gt)
     assert report.tp == 1 and report.clean
@@ -85,7 +85,7 @@ def test_pdf_ignores_fields_that_were_not_recorded():
 
 def test_pdf_flags_a_wrong_number_when_recorded():
     gt = _pdf_gt(kind="theorem", number="1.1", body="Every bounded sequence ... converges.")
-    parsed = [Statement(kind="theorem", ref="9.9", body="Every bounded sequence of reals converges.")]
+    parsed = [Statement(kind="theorem", number="9.9", body="Every bounded sequence of reals converges.")]
     report = score_pdf(parsed, gt)
     assert [d.field for d in report.matched[0].diffs] == ["number"]
 
@@ -100,7 +100,7 @@ def test_blank_proof_or_number_is_treated_as_not_recorded():
     assert s.number is None
 
     gt = _pdf_gt(kind="theorem", body="Alpha ... omega.", proof="")
-    parsed = [Statement(kind="theorem", ref="1.1", body="Alpha beta gamma omega.")]
+    parsed = [Statement(kind="theorem", number="1.1", body="Alpha beta gamma omega.")]
     report = score_pdf(parsed, gt)
     assert report.clean, "blank proof must not be scored as a missing proof"
 
@@ -108,7 +108,7 @@ def test_blank_proof_or_number_is_treated_as_not_recorded():
 def test_pdf_flags_a_missing_proof_when_recorded():
     gt = _pdf_gt(kind="corollary", number="1.6", body="Let $C$ be as above ... root stack.",
                  proof="... The result then follows from ...")
-    parsed = [Statement(kind="corollary", ref="1.6", body="Let $C$ be as above and take a root stack.")]
+    parsed = [Statement(kind="corollary", number="1.6", body="Let $C$ be as above and take a root stack.")]
     report = score_pdf(parsed, gt)
     assert [d.field for d in report.matched[0].diffs] == ["proof"]
 
@@ -123,8 +123,8 @@ def test_identical_bodies_are_paired_by_kind_and_number():
         {"kind": "theorem", "number": "2.1", "body": same},
     ])
     parsed = [
-        Statement(kind="conjecture", ref="1.1", body=same),
-        Statement(kind="theorem", ref="2.1", body=same),
+        Statement(kind="conjecture", number="1.1", body=same),
+        Statement(kind="theorem", number="2.1", body=same),
     ]
     report = score_pdf(parsed, gt)
     assert report.tp == 2
@@ -138,12 +138,12 @@ def test_body_outweighs_number_when_the_two_disagree():
         {"kind": "theorem", "number": "1.1", "body": "Alpha beta gamma delta epsilon zeta"},
     ])
     parsed = [
-        Statement(kind="theorem", ref="7.7", body="Alpha beta gamma delta epsilon zeta"),
-        Statement(kind="theorem", ref="1.1", body="Entirely unrelated words concerning turtles"),
+        Statement(kind="theorem", number="7.7", body="Alpha beta gamma delta epsilon zeta"),
+        Statement(kind="theorem", number="1.1", body="Entirely unrelated words concerning turtles"),
     ]
     report = score_pdf(parsed, gt)
     assert report.tp == 1
-    assert report.matched[0].parsed.ref == "7.7"          # matched on content
+    assert report.matched[0].parsed.number == "7.7"          # matched on content
     assert [d.field for d in report.matched[0].diffs] == ["number"]
 
 
@@ -153,12 +153,12 @@ def test_pdf_reports_phantoms_and_misses():
         {"kind": "lemma", "number": "1.2", "body": "Zeta eta theta iota kappa."},
     ])
     parsed = [
-        Statement(kind="theorem", ref="1.1", body="Alpha beta gamma delta epsilon."),
-        Statement(kind="remark", ref="9.9", body="Totally unrelated filler sentence here."),
+        Statement(kind="theorem", number="1.1", body="Alpha beta gamma delta epsilon."),
+        Statement(kind="remark", number="9.9", body="Totally unrelated filler sentence here."),
     ]
     report = score_pdf(parsed, gt)
     assert report.tp == 1
-    assert report.fp == 1 and report.phantoms[0].ref == "9.9"
+    assert report.fp == 1 and report.phantoms[0].number == "9.9"
     assert report.fn == 1 and report.misses[0].number == "1.2"
     assert not report.clean
 
@@ -170,13 +170,13 @@ def _tex_gt(*statements):
 
 
 def test_tex_checks_every_field():
-    gt = _tex_gt(Statement(kind="theorem", ref="1.1", note="Nice", labels=["thm:a"],
+    gt = _tex_gt(Statement(kind="theorem", number="1.1", note="Nice", labels=["thm:a"],
                            body="Alpha beta gamma delta.", proof="Because."))
-    parsed = [Statement(kind="lemma", ref="9.9", note=None, labels=["thm:b"],
+    parsed = [Statement(kind="lemma", number="9.9", note=None, labels=["thm:b"],
                         body="Alpha beta gamma delta.", proof=None)]
     report = score_tex(parsed, gt)
     assert report.tp == 1
-    assert {d.field for d in report.matched[0].diffs} == {"kind", "ref", "note", "labels", "proof"}
+    assert {d.field for d in report.matched[0].diffs} == {"kind", "number", "note", "labels", "proof"}
 
 
 # --- annotate: lenient JSON extraction from a model response ---------------
@@ -323,7 +323,7 @@ def test_a_run_off_proof_still_matches_a_parser_that_found_the_whole_proof():
     gt = _pdf_gt(kind="theorem", number="1.1", body="Alpha ... omega.",
                  proof="We first assume the ring is henselian ...")
     parsed = [Statement(
-        kind="theorem", ref="1.1", body="Alpha beta gamma omega.",
+        kind="theorem", number="1.1", body="Alpha beta gamma omega.",
         proof="We first assume the ring is henselian, and then reduce to that case "
               "by a limit argument, which concludes the proof.",
     )]
@@ -348,9 +348,9 @@ def test_annotated_response_validates_into_ground_truth():
 
 
 def test_tex_passes_when_the_parse_matches_exactly():
-    s = Statement(kind="theorem", ref="1.1", labels=["thm:a"], body=r"$\mathbb{R}^n$ is fine.")
+    s = Statement(kind="theorem", number="1.1", labels=["thm:a"], body=r"$\mathbb{R}^n$ is fine.")
     gt = _tex_gt(s)
     # same content, benign tex-engine spacing -> still clean
-    parsed = [Statement(kind="theorem", ref="1.1", labels=["thm:a"], body=r"$\mathbb{R} ^n$ is fine.")]
+    parsed = [Statement(kind="theorem", number="1.1", labels=["thm:a"], body=r"$\mathbb{R} ^n$ is fine.")]
     report = score_tex(parsed, gt)
     assert report.clean

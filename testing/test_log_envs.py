@@ -29,11 +29,11 @@ def test_space_named_env_advances_the_shared_counter():
     """
     defs = _parse_theorem_defs(src)
     by_label = {lab: e for e in log_envs(src) if e.raw_env in defs for lab in e.labels}
-    assert by_label["d1"].ref == "1"
-    assert by_label["s1"].ref == "2"
-    assert by_label["s2"].ref == "3"
+    assert by_label["d1"].number == "1"
+    assert by_label["s1"].number == "2"
+    assert by_label["s2"].number == "3"
     # the theorem is 4, not 2 — the two space-named blocks were counted
-    assert by_label["t1"].ref == "4"
+    assert by_label["t1"].number == "4"
     # and the space-named env keeps its display name, so a kinds filter can drop it
     assert by_label["s1"].env == "primary statistics"
 
@@ -57,7 +57,7 @@ def test_nested_statement_is_extracted_and_referenced_in_the_outer():
     by_label = {lab: e for e in envs for lab in e.labels}
     # the nested fact is extracted, numbered on the shared counter (lemma 1, fact 2)
     assert by_label["fct:helper"].env == "fact"
-    assert by_label["fct:helper"].ref == "2"
+    assert by_label["fct:helper"].number == "2"
     proof = next(e for e in envs if e.raw_env == "proof")
     assert r"\ref{fct:helper}" in proof.body
     assert "identity element" not in proof.body   # inner body not duplicated into outer
@@ -94,15 +94,15 @@ def test_top_level_unlabeled_statement_gets_no_synthetic_label():
     assert thm.labels == []
 
 
-def test_counter_format_markup_is_stripped_from_the_ref():
+def test_counter_format_markup_is_stripped_from_the_number():
     # \renewcommand{\thesubsection}{{\bf\arabic{subsection}}} only *styles* the
     # printed number -- a reader sees "1.1", not "{\bf1}.1". Mirrors 1604.07787.
-    from arxitex.lib.statement.methods.regex.log_envs import _clean_ref
+    from arxitex.lib.statement.methods.regex.log_envs import _clean_number
 
-    assert _clean_ref(r"{\bf5}") == "5"
-    assert _clean_ref(r"{\bf1}.2") == "1.2"
-    assert _clean_ref(r"\textbf{A}.3") == "A.3"
-    assert _clean_ref("1.2") == "1.2"          # ordinary refs pass through
+    assert _clean_number(r"{\bf5}") == "5"
+    assert _clean_number(r"{\bf1}.2") == "1.2"
+    assert _clean_number(r"\textbf{A}.3") == "A.3"
+    assert _clean_number("1.2") == "1.2"          # ordinary refs pass through
 
     src = r"""
     \newtheorem{theorem}{Theorem}[subsection]
@@ -113,7 +113,7 @@ def test_counter_format_markup_is_stripped_from_the_ref():
     \end{document}
     """
     thm = next(e for e in log_envs(src) if e.raw_env == "theorem")
-    assert thm.ref == "1.1"
+    assert thm.number == "1.1"
 
 
 def test_leading_parenthetical_is_captured_as_a_note():
@@ -196,5 +196,5 @@ def test_starred_env_names_still_match():
     """
     defs = _parse_theorem_defs(src)
     by_label = {lab: e for e in log_envs(src) if e.raw_env in defs for lab in e.labels}
-    assert by_label["t"].ref == "1"
-    assert by_label["r"].ref is None
+    assert by_label["t"].number == "1"
+    assert by_label["r"].number is None

@@ -93,7 +93,7 @@ def parse(
         return [
             Statement(
                 kind=env.env,
-                ref=env.ref,
+                number=env.number,
                 note=env.note,
                 labels=env.labels,
                 body=env.body,
@@ -109,7 +109,7 @@ def parse(
     return [
         Statement(
             kind=env.env,
-            ref=env.ref,
+            number=env.number,
             note=env.note,
             labels=env.labels,
             body=env.body,

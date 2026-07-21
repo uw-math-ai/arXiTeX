@@ -97,7 +97,7 @@ result = parser.parse("2109.06451") # arXiv ID
 
 print("parsed with:", result.method_used)
 for stmt in result.statements:
-    print(stmt.kind, stmt.ref, "-", stmt.note)
+    print(stmt.kind, stmt.number, "-", stmt.note)
     print(stmt.body)
     if stmt.proof:
         print(stmt.proof)
@@ -136,7 +136,7 @@ import arxitex as arx
 
 arx.Parser(method="regex") # fast, no deps
 arx.Parser(method=arx.Tex(engine="pdflatex")) # real TeX via local TeX Live
-arx.Parser(method=arx.Llm(model="openai/gpt-4o")) # LLM extraction
+arx.Parser(method=arx.Llm()) # LLM extraction (Nebius by default)
 ```
 
 #### Fallback chains
@@ -169,7 +169,7 @@ of `arxiv_id=`, `path=`, or `s3_uri=`.
 ```python
 {
     "theorem", "lemma", "proposition", "corollary",
-    "definition",
+    "definition", "algorithm",
     "axiom", "postulate",
     "conjecture", "hypothesis",
     "proof",
@@ -178,6 +178,9 @@ of `arxiv_id=`, `path=`, or `s3_uri=`.
     "notation", "convention",
 }
 ```
+
+A statement whose kind isn't in this set is dropped, so pass your own `kinds` to
+keep more (e.g. add `"example"`) or fewer.
 
 **`focus`** controls which fields are populated in the returned `ParseResult`,
 so you can skip work you don't need:
@@ -203,7 +206,8 @@ Installing the package also provides an `arxitex` CLI:
 arxitex 2109.06451 -o statements.jsonl
 arxitex path/to/paper/ -m tex -m regex  # fallback chain
 arxitex 2109.06451 -m tex --engine pdflatex
-arxitex 2109.06451 -m llm --model openai/gpt-4o
+arxitex 2109.06451 -m llm                # LLM extraction (Nebius by default)
+arxitex 2109.06451 -m llm --base-url https://api.openai.com/v1 --model gpt-4o
 ```
 
 ------------------------------------------------------------------------
@@ -262,9 +266,9 @@ class ArXivPaper(BaseModel):
 ```python
 class Statement(BaseModel):
     kind: str                   # e.g. "theorem", "lemma", "proof"
-    ref: Optional[str]          # numbering as it appears in the document, e.g. "1.1"
+    number: Optional[str]       # numbering as it appears in the document, e.g. "1.1"
     note: Optional[str]         # optional title or caption
-    label: Optional[str]        # LaTeX \label{...} key
+    labels: List[str]           # every LaTeX \label{...} key on the statement, in order
     body: str                   # LaTeX body, user macros expanded where possible
     proof: Optional[str]        # raw LaTeX proof, if present
     pre_context: Optional[str]  # text before the statement (regex method + context only)

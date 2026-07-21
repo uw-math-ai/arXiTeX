@@ -34,9 +34,9 @@ def _patch_client(monkeypatch, content, on_call=None):
 
 def test_llm_parse_with_mocked_backend(monkeypatch):
     canned = """[
-      {"kind":"theorem","ref":"1.1","note":"Nonnegativity","label":"thm:main",
+      {"kind":"theorem","number":"1.1","note":"Nonnegativity","label":"thm:main",
        "body":"For every $x$ we have $\\\\|x\\\\| \\\\geq 0$.","proof":"By definition."},
-      {"kind":"definition","ref":"1.1","note":null,"label":"def:norm",
+      {"kind":"definition","number":"1.1","note":null,"label":"def:norm",
        "body":"A norm is a nonnegative function.","proof":null}
     ]"""
     seen = []

@@ -13,7 +13,7 @@ Public API
 
 Each Environment has:
     env        - raw environment name (e.g. "thm")
-    ref        - counter string (e.g. "2.3") or None for unnumbered envs
+    number     - counter string (e.g. "2.3") or None for unnumbered envs
     note       - optional argument, e.g. [Fermat's Last Theorem], macros expanded
     labels     - all \\label{...} keys, in source order (possibly empty)
     body       - inner content, \\label stripped, macros expanded
@@ -34,7 +34,7 @@ from pydantic import BaseModel, field_validator
 class Environment(BaseModel):
     env:        str
     raw_env:    str  # original env name as it appears in \begin{...}, before display-name mapping
-    ref:        Optional[str] = None
+    number:     Optional[str] = None
     note:       Optional[str] = None
     labels:     list[str] = []             # all \labels on the env, in source order
     body:       str
@@ -45,7 +45,7 @@ class Environment(BaseModel):
     body_start: int = 0  # char offset where the body (after \begin[note]) starts
     body_end:   int = 0  # char offset where the body ends (at \end)
 
-    @field_validator("env", "raw_env", "ref", "note", "body", mode="before")
+    @field_validator("env", "raw_env", "number", "note", "body", mode="before")
     @classmethod
     def strip_nul(cls, v: object) -> object:
         return v.replace("\x00", "") if isinstance(v, str) else v
@@ -436,7 +436,7 @@ def _parse_theorem_defs(
 _REF_MARKUP_RE = re.compile(r"\\[a-zA-Z@]+\s*|[{}$]")
 
 
-def _clean_ref(ref: str) -> str:
+def _clean_number(ref: str) -> str:
     """Strip styling (\\bf, braces, ...) from an evaluated counter, leaving the
     number as printed."""
     return _REF_MARKUP_RE.sub("", ref).strip()
@@ -701,14 +701,14 @@ def log_envs(tex: str) -> list[Environment]:
         ref = f"{prefix}.{n}" if prefix and not all(p == "0" for p in prefix.split(".")) else str(n)
         return ref
 
-    def _next_ref(env: str) -> Optional[str]:
+    def _next_number(env: str) -> Optional[str]:
         if thm_defs.get(env, {}).get("unnumbered"):
             return None
         root = _get_root(env)
         if root is None:
             return None
         bank.step(root)
-        return _clean_ref(_counter_ref(root)) or None
+        return _clean_number(_counter_ref(root)) or None
 
     # ── 5. collect interleaved events and scan ────────────────────────────────
 
@@ -770,9 +770,9 @@ def log_envs(tex: str) -> list[Environment]:
             body_start  = tok_end + note_match.end() if note_match else tok_end
             # Step the counter now (at \begin time), mirroring LaTeX's behaviour.
             # This ensures any \setcounter / section commands inside the body
-            # don't corrupt the ref that was assigned to this environment.
-            ref         = _next_ref(env) if env in thm_defs else None
-            stack.append((env, body_start, _lineno(tok_start), note, ref, tok_start))
+            # don't corrupt the number that was assigned to this environment.
+            number      = _next_number(env) if env in thm_defs else None
+            stack.append((env, body_start, _lineno(tok_start), note, number, tok_start))
 
         elif kind == "end":
             match_idx = None
@@ -783,7 +783,7 @@ def log_envs(tex: str) -> list[Environment]:
             if match_idx is None:
                 continue
 
-            open_env, body_start, begin_line, note, ref, begin_pos = stack.pop(match_idx)
+            open_env, body_start, begin_line, note, number, begin_pos = stack.pop(match_idx)
             end_line = _lineno(tok_start)
 
             env_name = thm_defs[open_env]["display"].lower() if open_env in thm_defs else open_env
@@ -793,7 +793,7 @@ def log_envs(tex: str) -> list[Environment]:
             results.append(Environment(
                 env        = env_name,
                 raw_env    = open_env,
-                ref        = ref,
+                number     = number,
                 note       = note,
                 labels     = [],
                 body       = "",
@@ -871,7 +871,7 @@ def _add_text_proofs(
             continue                                  # would swallow the next proof
         tail = _MARKER_TAIL_RE.match(clean, m.end())
         results.append(Environment(
-            env="proof", raw_env="proof", ref=None, note=None, labels=[], body="",
+            env="proof", raw_env="proof", number=None, note=None, labels=[], body="",
             begin_line=clean.count("\n", 0, m.start()) + 1,
             end_line=clean.count("\n", 0, qed.end()) + 1,
             begin_pos=m.start(), end_pos=qed.end(),

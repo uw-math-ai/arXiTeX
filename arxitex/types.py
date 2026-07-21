@@ -28,7 +28,7 @@ class Statement(BaseModel):
     ----------
     kind : str
         The statement's type, e.g. "theorem", "lemma", "proof".
-    ref : str, optional
+    number : str, optional
         The statement's number as it appears in the document (e.g. "1.1", "A.2").
     note : str, optional
         The statement's note, usually a title or caption.
@@ -48,7 +48,7 @@ class Statement(BaseModel):
     """
 
     kind: str
-    ref: Optional[str] = None
+    number: Optional[str] = None
     note: Optional[str] = None
     labels: List[str] = Field(default_factory=list)
     body: str

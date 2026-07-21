@@ -49,7 +49,7 @@ def is_human(gt: PdfGroundTruth) -> bool:
 def as_statements(gt: PdfGroundTruth) -> list[Statement]:
     """View a PDF annotation as parser output, so score_pdf can grade it."""
     return [
-        Statement(kind=s.kind, ref=s.number, body=s.body, proof=s.proof)
+        Statement(kind=s.kind, number=s.number, body=s.body, proof=s.proof)
         for s in gt.statements
     ]
 

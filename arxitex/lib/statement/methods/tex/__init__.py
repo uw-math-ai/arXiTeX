@@ -124,11 +124,11 @@ def _record_to_statement(rec: dict, thm_defs: dict, flat_tex: str) -> Optional[S
     if note is not None:
         note = _WS_RE.sub(" ", expand_user_macros(note, flat_tex)).strip() or None
 
-    ref = rec.get("REF")
-    if ref is not None:
-        ref = ref.strip() or None
+    number = rec.get("REF")
+    if number is not None:
+        number = number.strip() or None
 
-    return Statement(kind=kind, ref=ref, note=note, labels=labels, body=body, proof=None)
+    return Statement(kind=kind, number=number, note=note, labels=labels, body=body, proof=None)
 
 
 def tex_parse(

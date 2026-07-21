@@ -6,9 +6,9 @@ Both modes align parsed statements to ground-truth statements by *body content*
 be flagged), then check fields on the aligned pairs. What differs is strictness:
 
 * ``tex`` — exhaustive. Ground truth is the full expected parse; every field is
-  checked (kind, ref, note, label, full body, proof). Catches runtime bugs.
+  checked (kind, number, note, labels, full body, proof). Catches runtime bugs.
 * ``pdf`` — lenient. Ground truth only has what's visible in the PDF; only kind,
-  ref, and the body snippet are checked, everything else ignored.
+  number, and the body snippet are checked, everything else ignored.
 
 Unmatched parsed statements are phantoms (false positives); unmatched ground
 truth are misses (false negatives). A *terribly wrong body* fails to align and
@@ -33,8 +33,8 @@ MATCH_THRESHOLD = 0.6
 _EXCLUDED_KINDS = frozenset({"proof"})
 
 
-def _norm_ref(ref: Optional[str]) -> Optional[str]:
-    return ref.strip() or None if ref else None
+def _norm_number(number: Optional[str]) -> Optional[str]:
+    return number.strip() or None if number else None
 
 
 def _norm_kind(kind: Optional[str]) -> str:
@@ -113,11 +113,11 @@ class PaperReport:
             lines.append(f"  ! parse error: {self.error}")
         for v in self.matched:
             for d in v.diffs:
-                lines.append(f"  ~ {_gt_ref(v.gt)} {_gt_kind(v.gt)}: {d}")
+                lines.append(f"  ~ {_gt_number(v.gt)} {_gt_kind(v.gt)}: {d}")
         for p in self.phantoms:
-            lines.append(f"  + phantom (parsed, not in ground truth): {p.kind} {p.ref!r} '{_snippet(p.body)}'")
+            lines.append(f"  + phantom (parsed, not in ground truth): {p.kind} {p.number!r} '{_snippet(p.body)}'")
         for m in self.misses:
-            lines.append(f"  - miss (in ground truth, not parsed): {_gt_kind(m)} {_gt_ref(m)!r} '{_gt_snippet(m)}'")
+            lines.append(f"  - miss (in ground truth, not parsed): {_gt_kind(m)} {_gt_number(m)!r} '{_gt_snippet(m)}'")
         return "\n".join(lines)
 
 
@@ -125,9 +125,9 @@ class PaperReport:
 
 def _snippet(body: Optional[str]) -> str: return (body or "")[:50]
 def _gt_kind(g) -> str: return getattr(g, "kind", "?")
-def _gt_ref(g):
-    """The expected number: Statement calls it `ref`, PdfStatement `number`."""
-    return getattr(g, "ref", None) if hasattr(g, "ref") else getattr(g, "number", None)
+def _gt_number(g):
+    """The expected number (both Statement and PdfStatement call it ``number``)."""
+    return getattr(g, "number", None)
 def _gt_snippet(g) -> str: return _snippet(getattr(g, "body", ""))
 
 
@@ -139,7 +139,7 @@ def _gt_snippet(g) -> str: return _snippet(getattr(g, "body", ""))
 # difference in body, so a misnumbered statement still aligns on content and its
 # bad number is still reported — alignment stays content-first by design.
 _KIND_AFFINITY = 0.02
-_REF_AFFINITY = 0.01
+_NUMBER_AFFINITY = 0.01
 
 
 def _affinity(g, p: Statement) -> float:
@@ -147,9 +147,9 @@ def _affinity(g, p: Statement) -> float:
     bonus = 0.0
     if _norm_kind(_gt_kind(g)) == _norm_kind(p.kind):
         bonus += _KIND_AFFINITY
-    ref = _gt_ref(g)
-    if ref is not None and _norm_ref(ref) == _norm_ref(p.ref):
-        bonus += _REF_AFFINITY
+    number = _gt_number(g)
+    if number is not None and _norm_number(number) == _norm_number(p.number):
+        bonus += _NUMBER_AFFINITY
     return bonus
 
 
@@ -178,7 +178,7 @@ def _greedy_align(scores: list[tuple[float, float, int, int]]):
 def _tex_diffs(g: Statement, p: Statement) -> List[FieldDiff]:
     checks = [
         ("kind", g.kind, p.kind, _norm_kind),
-        ("ref", g.ref, p.ref, _norm_ref),
+        ("number", g.number, p.number, _norm_number),
         ("note", g.note, p.note, norm_body),
         ("labels", g.labels, p.labels, lambda x: x),
         ("body", g.body, p.body, norm_body),
@@ -259,8 +259,8 @@ def score_pdf(parsed: Sequence[Statement], gt: PdfGroundTruth, config: str = "")
         if _norm_kind(g.kind) != _norm_kind(p.kind):
             diffs.append(FieldDiff("kind", g.kind, p.kind))
         # number/proof are only checked when recorded; absent means "ignore".
-        if g.number is not None and _norm_ref(g.number) != _norm_ref(p.ref):
-            diffs.append(FieldDiff("number", g.number, p.ref))
+        if g.number is not None and _norm_number(g.number) != _norm_number(p.number):
+            diffs.append(FieldDiff("number", g.number, p.number))
         if g.proof is not None:
             if p.proof is None:
                 diffs.append(FieldDiff("proof", "<a proof>", None))
