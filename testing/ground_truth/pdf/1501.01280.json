@@ -1,0 +1,97 @@
+{
+  "arxiv_id": "1501.01280",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-21",
+  "note": "2015 paper",
+  "statements": [
+    {
+      "kind": "lemma",
+      "number": "2.1",
+      "body": "Let ... be a stable bundle with ... Then ... are embeddings."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.1",
+      "body": "For a general stable bundle ... of rank ... and degree ... is non-defective.",
+      "proof": "To ease notation ... tangent spaces ... we are done."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.2",
+      "body": "For ... the embedded tangent space ... coincides with ...",
+      "proof": "Let ... and ... be as above ... satisfying ... The lemma follows by ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "3.3",
+      "body": "Suppose ... is a general stable bundle of rank ... that is ...",
+      "proof": "If ... then by ... we have ... identical to that in ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "3.4",
+      "body": "Let ... be a general stable bundle, and suppose ... Then the map ... is secant non-defective.",
+      "proof": "Write ... for the projection ... the corollary follows."
+    },
+    {
+      "kind": "remark",
+      "number": "3.5",
+      "body": "The above definitions of the secant variety ... minor technical modifications."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.1",
+      "body": "Let ... be an orthogonal bundle ... even degree ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.2",
+      "body": "... The subspace ... parameterizes ... then ...",
+      "proof": "... follows from ... and the definition of ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "4.3",
+      "body": "Let ... be an orthogonal bundle ... is such that ...",
+      "proof": "Suppose ... is a general orthogonal bundle of ... with ... trivial ... is nontrivial is proven similarly."
+    },
+    {
+      "kind": "remark",
+      "number": "4.4",
+      "body": "The above result was proven by a different method ... to be odd instead of even."
+    },
+    {
+      "kind": "remark",
+      "number": "4.5",
+      "body": "In ... the secant geometry of ... corresponding extensions."
+    },
+    {
+      "kind": "proposition",
+      "number": "5.1",
+      "body": "Suppose ... has genus ... and ... subbundles of ... is at most ...",
+      "proof": "Let ... be a general bundle of degree ... by hypothesis."
+    },
+    {
+      "kind": "proposition",
+      "number": "5.2",
+      "body": "The space ... consists of two disjoint, irreducible and ... if and only if ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "5.3",
+      "body": "Assume that ... and ... Let ... subbundle of degree ...",
+      "proof": "... By ... the bundle ... is an extension ... exactly the line bundle ..."
+    },
+    {
+      "kind": "remark",
+      "number": "5.4",
+      "body": "If ... we can determine the line bundle ... the diagrams ... we obtain ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "5.5",
+      "body": "Suppose ... has genus ... and let ... be a general ... generic fiber of ...",
+      "proof": "We may assume ... the statement being obvious ... which holds since ... and ..."
+    }
+  ]
+}

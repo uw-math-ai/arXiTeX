@@ -1,0 +1,103 @@
+{
+  "arxiv_id": "2211.00095",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-21",
+  "note": "2022 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "30",
+      "body": "If ... is a type ... or type ... seaweed, then ... if and only if ..."
+    },
+    {
+      "kind": "remark",
+      "number": "1",
+      "body": "It was recently shown in ... that an index-one ... and type ... seaweed."
+    },
+    {
+      "kind": "remark",
+      "number": "3",
+      "body": "We tacitly assume a standard ... for all admissible locations ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "5",
+      "body": "If ... is a type ... seaweed, then ... where ... is the number ... endpoints in ..."
+    },
+    {
+      "kind": "remark",
+      "number": "6",
+      "body": "Note that the aftertail is not involved in ... type ... seaweed ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "8",
+      "body": "Let ... be a type ... seaweed with associated meander ... one of the following moves ..."
+    },
+    {
+      "kind": "remark",
+      "number": "9",
+      "body": "It is worth noting ... type ... seaweeds."
+    },
+    {
+      "kind": "theorem",
+      "number": "11",
+      "body": "If ... is a type ... seaweed with homotopy type then ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "12",
+      "body": "A type ... seaweed ... has index one if and only if ... homotopy types ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "18",
+      "body": "Let ... be a type ... seaweed with homotopy type ... sign in ...",
+      "proof": "Since ... has a component of size ... opposite sign in ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "19",
+      "body": "Let ... be a type ... seaweed with homotopy type ... then ... and ...",
+      "proof": "Since ... is regular, we need only show that ... consider the following ... similar reasoning."
+    },
+    {
+      "kind": "remark",
+      "number": "22",
+      "body": "The summands of the regular one-form ... is given by ... or ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "23",
+      "body": "If ... has homotopy type ... where ...",
+      "proof": "Since ... is regular ... The result follows."
+    },
+    {
+      "kind": "remark",
+      "number": "26",
+      "body": "The summands of the regular one-form ... can be visualized in the meanders ... can be written as ... or ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "27",
+      "body": "Let ... have homotopy type ... If ... is the unique ... then ... where ...",
+      "proof": "Since ... is regular on ... we need only show that ... The result follows."
+    },
+    {
+      "kind": "lemma",
+      "number": "29",
+      "body": "Let ... be an arbitrary Lie algebra ... if and only if ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "30",
+      "body": "If ... is a type ... or type ... seaweed ... if and only if ...",
+      "proof": "If ... is a type ... seaweed ... Recall from ... homotopy types ... the claim."
+    },
+    {
+      "kind": "theorem",
+      "number": "31",
+      "body": "Let ... or ... then ..."
+    }
+  ]
+}

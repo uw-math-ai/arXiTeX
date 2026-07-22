@@ -1,0 +1,28 @@
+{
+  "arxiv_id": "1206.0340",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-21",
+  "note": "2012 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... be a positive integer and ... be any finite set ... is irrational."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.2",
+      "body": "Let ... be a positive integer and ... be any finite set of integers ... is irrational."
+    },
+    {
+      "kind": "proposition",
+      "number": "2.1",
+      "body": "Let ... Then there exist positive integers ... and ... prime to ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.2",
+      "body": "With ... all as above ... such that ... is less than ... for some constant ... independent of all variables."
+    }
+  ]
+}

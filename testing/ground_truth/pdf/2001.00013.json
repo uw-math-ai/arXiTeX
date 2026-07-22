@@ -1,0 +1,56 @@
+{
+  "arxiv_id": "2001.00013",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-21",
+  "note": "2020 paper",
+  "statements": [
+    {
+      "kind": "remark",
+      "number": "1",
+      "body": "For small values of ... distribution is an ... studied in ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "1",
+      "body": "The QC distribution is symmetric if and only if at least one of the following holds ...",
+      "proof": "The if part is straightforward ... implies that ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2",
+      "body": "Parameters of a QC distribution are uniquely determined by the distribution.",
+      "proof": "Assume that ... It follows from ... Substituting implies that ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "3",
+      "body": "... is closed under linear combination and convolution ... is closed under mixture and convolution.",
+      "proof": "Since Fourier transform is a linear transform ... mixture and convolution."
+    },
+    {
+      "kind": "proposition",
+      "number": "4",
+      "body": "We have ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "5",
+      "body": "We have ... and that ..."
+    },
+    {
+      "kind": "remark",
+      "number": "2",
+      "body": "Indeed it may be the case that ... or disproving it."
+    },
+    {
+      "kind": "theorem",
+      "number": "6",
+      "body": "A function ... is the Fourier series of a positive Borel ... is positive definite ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "7",
+      "body": "... if and only if ... and ... and the following five diagonal matrix is positive definite ..."
+    }
+  ]
+}

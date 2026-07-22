@@ -1,0 +1,140 @@
+{
+  "arxiv_id": "1903.07316",
+  "annotator": "Eric Leonen",
+  "date": "2026-07-21",
+  "note": "2019 paper",
+  "statements": [
+    {
+      "kind": "theorem",
+      "number": "1.1",
+      "body": "Let ... and let ... be their associated two-graphs ... they form a Zariski pair."
+    },
+    {
+      "kind": "remark",
+      "number": "1.1",
+      "body": "Two-graphs are well suited for describing ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "1.2",
+      "body": "Under the notation given above, the numbers ... Thus we have the following ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.1",
+      "body": "A two-graph ... is a pair of ... triples in ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.2",
+      "body": "Two two-graphs ... if and only if ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.3",
+      "body": "An induced sub-two-graph ... and ..."
+    },
+    {
+      "kind": "definition",
+      "number": "2.4",
+      "body": "The graphs ... and ... are switching-equivalent ... the following two operations ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.1",
+      "body": "Switching-eqivalence is an equivalence relation."
+    },
+    {
+      "kind": "remark",
+      "number": "2.1",
+      "body": "The name ... comes from the fact that the former one ... corresponding graph."
+    },
+    {
+      "kind": "lemma",
+      "number": "2.1",
+      "body": "Let ... and ... be finite simple graphs ... are the same for all ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.2",
+      "body": "Given ... there is a one-to-one correspondence ... the set of ... elements."
+    },
+    {
+      "kind": "definition",
+      "number": "3.1",
+      "body": "The two-graph ... is said to be the two-graph associated to ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "3.1",
+      "body": "For all triples ... is equal to ..."
+    },
+    {
+      "kind": "theorem",
+      "number": "3.1",
+      "body": "The pair ... is a two-graph for any ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "3.2",
+      "body": "For ... th enumber of edges ... equals ...",
+      "proof": "By ... the connected number of ... if and only if ... is ... or ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "3.3",
+      "body": "The two graph corresponding to the switching class represented ... and the two-graph ... are equivalent."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.1",
+      "body": "Let ... and let ... be their associated ... If there exists a homeomorphism ... induces an equivalence of two-graphs ...",
+      "proof": "Since ... is a genus ... curve and the other irreducible components ... two-graphs."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.1",
+      "body": "Let ... be a general smooth quartic curve ... single point ...",
+      "proof": "Do to the openness of the conditions ... bitangent lines given in ..."
+    },
+    {
+      "kind": "proposition",
+      "number": "4.2",
+      "body": "Let ... be a general smooth quartic. Then for a fixed integer ... and any ... with ... the curves of the form ... all have the same combinatorics."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.2",
+      "body": "Let ... For each triple ... such that every triple of ... is an element of ...",
+      "proof": "As in the proof of ... if there exists a conic ... passing through six points."
+    },
+    {
+      "kind": "remark",
+      "number": "4.1",
+      "body": "Note that a bitangent line ... unique syzygetic tetrad."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.3",
+      "body": "For any ... its associated two graph ... must satisfy ...",
+      "proof": "From the classification of two-graphs ... and we have ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.1",
+      "body": "For any ... its associated two graph ... cannot have an induced sub-two-graph ... such that ..."
+    },
+    {
+      "kind": "lemma",
+      "number": "4.4",
+      "body": "Let ... be a two graph with ... such that ...",
+      "proof": "Since each triple ... is contained ... we have ... Hence there must be a ... satisfying ..."
+    },
+    {
+      "kind": "corollary",
+      "number": "4.2",
+      "body": "For any subset ... with ...",
+      "proof": "If ... then ... there must exist a indused sub-two-graph with ... which is impossible by ..."
+    }
+  ]
+}
