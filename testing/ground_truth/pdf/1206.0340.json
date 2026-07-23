@@ -23,6 +23,18 @@
       "kind": "lemma",
       "number": "2.2",
       "body": "With ... all as above ... such that ... is less than ... for some constant ... independent of all variables."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.3",
+      "body": "For any integer ... the function ... is irrational for ...",
+      "proof": "Consider the number ... If ... is rational, then the fractional parts of ... cannot be rational."
+    },
+    {
+      "kind": "theorem",
+      "number": "2.4",
+      "body": "If ... is a ... partition where the numerator of each ... if ... is replaced with ...",
+      "proof": "In the first case, note that since ... is the numerator of ... and ..."
     }
   ]
 }

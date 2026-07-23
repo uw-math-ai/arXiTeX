@@ -584,8 +584,10 @@ _END_RE   = re.compile(r"\\end\s*\{\s*([\w @]+?\*?)\s*\}")
 # Optional note right after \begin{env}. The standard form is a bracketed
 # argument (\begin{thm}[Fermat]); some authors instead open the body with a
 # parenthetical (\begin{proof}(of Theorem~\ref{main})), which serves the same
-# role — so treat a leading (...) as a note too.
-_NOTE_RE  = re.compile(r"^\s*(?:\[([^\]]*)\]|\(([^)]*)\))")
+# role. The parenthetical is only that idiom — it must start with "of" — so a
+# body that opens on an enumeration marker like "(1)" (a multi-part proof) isn't
+# mistaken for a note (cf. arXiv:1501.01280).
+_NOTE_RE  = re.compile(r"^\s*(?:\[([^\]]*)\]|\((of\b[^)]*)\))", re.IGNORECASE)
 
 # \label{key}
 _LABEL_RE = re.compile(r"\\label\s*\{([^}]+)\}")
@@ -753,9 +755,18 @@ def log_envs(tex: str) -> list[Environment]:
     results: list[Environment] = []
     stack:   list[tuple[str, int, int, Optional[str], Optional[str]]] = []
 
+    # Only scan the document body: a preamble `\newenvironment{remark}{\begin{rmk}
+    # \rm}{\end{rmk}}` contains \begin/\end tokens that are the environment's
+    # *definition*, not a real statement — matching them invents a phantom (cf.
+    # arXiv:1501.01280, 1903.07316). Fragments with no \begin{document} scan whole.
+    doc = _DOC_BEGIN_RE.search(clean)
+    scan_start = doc.start() if doc else 0
+
     tokens = sorted(
-        [("begin", m.group(1), m.start(), m.end()) for m in _BEGIN_RE.finditer(clean)]
-        + [("end",  m.group(1), m.start(), m.end()) for m in _END_RE.finditer(clean)],
+        [("begin", m.group(1), m.start(), m.end())
+         for m in _BEGIN_RE.finditer(clean, scan_start)]
+        + [("end",  m.group(1), m.start(), m.end())
+           for m in _END_RE.finditer(clean, scan_start)],
         key=lambda t: t[2],
     )
 
