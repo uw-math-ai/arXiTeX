@@ -159,6 +159,7 @@ parser = arx.Parser(method=["tex", "regex"]) # this is the default
 | `focus` | `ParseFocus \| str` | `"all"` | Which parts of the paper to populate. |
 | `validation` | `ValidationLevel \| str` | `"paper"` | `"paper"` (validate whole parse), `"statement"` (drop invalid ones), or `"none"`. |
 | `context` | `int` | `0` | Characters of surrounding text before/after each statement. **`regex` only.** |
+| `dependencies` | `bool` | `False` | Extract dependency edges between statements and to cited papers. See [Extract dependencies](#extract-dependencies). |
 | `timeout` | `int` | `None` | Max seconds per `.parse()` call. |
 
 **`.parse(...)`** takes the source positionally (auto-detected) or as exactly one
@@ -212,6 +213,48 @@ arxitex 2109.06451 -m llm --base-url https://api.openai.com/v1 --model gpt-4o
 
 ------------------------------------------------------------------------
 
+### Extract dependencies
+
+Pass `dependencies=True` to have the parser trace *which statements depend on
+which* — turning the cross-references a statement already carries into an explicit
+edge list on `result.dependencies`. It's opt-in and deterministic (no LLM, no
+network); output is otherwise unchanged.
+
+```python
+import arxitex as arx
+
+parser = arx.Parser(method="regex", dependencies=True)
+result = parser.parse("1903.07316")
+
+for dep in result.dependencies:
+    src = result.statements[dep.source_index]
+    if dep.scope == "intra":                       # points at another statement here
+        tgt = result.statements[dep.target_index]
+        print(f"{src.kind} -> {tgt.kind} ({dep.target_label})")
+    else:                                           # points at a cited paper
+        cited = result.bibliography.get(dep.cite_key, {})
+        print(f"{src.kind} -> {dep.target_name} in {cited.get('title') or dep.cite_key}")
+```
+
+Two kinds of edge:
+
+- **Intra-paper** (`scope="intra"`) — a `\ref`/`\cref`/`\autoref`/... that resolves
+  to another statement's `\label` in the same paper. Carries `target_index` and
+  `target_label`. Self-references, `\eqref`s to equations, and references to
+  statements nested *inside* the source are dropped.
+- **Inter-paper** (`scope="inter"`) — a `\cite` to another paper. Carries the
+  `cite_key` (a foreign key into `result.bibliography`) and a best-effort
+  `target_name` (e.g. `"Theorem 3.2"`, pulled from the `\cite` optional argument or
+  the prose right before it). Paper identity isn't copied onto every edge — look it
+  up: `result.bibliography[dep.cite_key]`.
+
+Enabling `dependencies=True` always populates `result.bibliography` (inter-paper
+edges need it), regardless of `focus`. Dependency quality is highest with the
+`"regex"` method, which retains `\ref`/`\cite` commands and character spans; the
+feature still runs best-effort for other methods.
+
+------------------------------------------------------------------------
+
 ### Parse a paper's bibliography
 
 `parse_bibliography` extracts bibliography entries from a paper's source.
@@ -228,8 +271,10 @@ for cite_key, entry in bibliography.items():
 ```
 
 Returns a `(dict, bool)` tuple. The dict maps cite keys to metadata
-dicts (containing `title` and `arxiv_id` where found). The bool is
-`True` when the source was a `.bib` file.
+dicts containing `title` and `arxiv_id` where found, plus `raw` — the
+full verbatim citation text. `raw` is a lossless fallback for styles
+where clean `title` extraction isn't possible (re-parse it or hand it to
+an LLM). The bool is `True` when the source was a `.bib` file.
 
 **Parameters**
 
@@ -284,7 +329,34 @@ class ParseResult:
     preamble: Optional[str]
     bibliography: Optional[Dict[str, Dict[str, str]]]
     bibliography_bibtex: Optional[bool]
-    method_used: Optional[str] # which method produced `statements` (e.g. "tex", "regex")
+    method_used: Optional[str]          # which method produced `statements` (e.g. "tex", "regex")
+    dependencies: Optional[List[Dependency]]  # None unless Parser(dependencies=True)
+```
+
+### `Dependency`
+
+A directed edge: statement `source_index` depends on the thing it points at.
+Only populated when `Parser(dependencies=True)`. See
+[Extract dependencies](#extract-dependencies).
+
+```python
+class DependencyScope(str, Enum):
+    INTRA = "intra"   # points at another statement in this paper
+    INTER = "inter"   # points at a cited paper
+
+class Dependency(BaseModel):
+    source_index: int              # index into ParseResult.statements
+    scope: DependencyScope
+    origin: str                    # where the reference was found: "body" | "proof" | "note"
+    raw: str                       # the matched command, e.g. \ref{thm:main} or \cite[Thm 3.2]{Smith}
+
+    # INTRA
+    target_index: Optional[int]    # index into ParseResult.statements
+    target_label: Optional[str]    # the \label that was resolved
+
+    # INTER
+    cite_key: Optional[str]        # key into ParseResult.bibliography
+    target_name: Optional[str]     # best-effort cited result, e.g. "Theorem 3.2"
 ```
 
 ------------------------------------------------------------------------
