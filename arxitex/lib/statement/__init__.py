@@ -29,6 +29,7 @@ from .run_with_timeout import run_with_timeout
 from .errors import ParseError, format_error
 from .guess_main_file import guess_main_file
 from .connect_proofs import connect_proofs
+from .dependencies import resolve_dependencies
 
 STATEMENT_KINDS = {
     "theorem", "lemma", "proposition", "corollary",
@@ -97,6 +98,12 @@ class Parser:
         raises. Defaults to ``0``.
     timeout : int, optional
         Maximum seconds for a single ``parse`` call. Defaults to no limit.
+    dependencies : bool, optional
+        When ``True``, populate :attr:`ParseResult.dependencies` with intra-paper
+        (``\\ref``) and inter-paper (``\\cite``) edges between statements. Off by
+        default. Enabling it forces bibliography parsing (needed to resolve
+        citations). Edge quality is highest with the ``regex`` method, which
+        retains source spans and ``\\ref``/``\\cite`` commands.
     """
 
     def __init__(
@@ -107,6 +114,7 @@ class Parser:
         validation: "ValidationLevel | str" = ValidationLevel.PAPER,
         context: int = 0,
         timeout: Optional[int] = None,
+        dependencies: bool = False,
     ):
         self.methods: List[Method] = resolve_methods(method)
         self.kinds: Set[str] = set(kinds)
@@ -114,6 +122,7 @@ class Parser:
         self.validation = ValidationLevel(validation)
         self.context = context
         self.timeout = timeout
+        self.dependencies = dependencies
 
         if context > 0:
             unsupported = [m.name for m in self.methods if not m.supports_context]
@@ -234,13 +243,20 @@ class Parser:
     def _parse_dir(self, paper_dir: Path) -> ParseResult:
         do_statements = self.focus in (ParseFocus.ALL, ParseFocus.STATEMENTS)
         do_preamble = self.focus in (ParseFocus.ALL, ParseFocus.PREAMBLE)
-        do_bibliography = self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+        do_dependencies = self.dependencies and do_statements
+        # Resolving inter-paper (\cite) dependencies needs the bibliography, so
+        # parse it whenever dependencies are requested even if the focus omits it.
+        do_bibliography = (
+            self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+            or do_dependencies
+        )
 
         statements = None
         preamble = None
         bibliography = None
         bibliography_bibtex = None
         method_used = None
+        dependencies = None
 
         main_file = None
         if do_preamble or do_statements:
@@ -267,12 +283,20 @@ class Parser:
         if do_bibliography:
             bibliography, bibliography_bibtex = parse_bibliography_from_dir(paper_dir)
 
+        if do_dependencies:
+            dependencies = resolve_dependencies(statements or [], bibliography)
+
+        # The bibliography may have been parsed only to resolve citations; don't
+        # surface it unless the focus actually asked for it.
+        expose_bibliography = self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+
         return ParseResult(
             statements=statements,
             preamble=preamble,
-            bibliography=bibliography,
-            bibliography_bibtex=bibliography_bibtex,
+            bibliography=bibliography if expose_bibliography else None,
+            bibliography_bibtex=bibliography_bibtex if expose_bibliography else None,
             method_used=method_used,
+            dependencies=dependencies,
         )
 
     def _run_methods(

@@ -62,6 +62,77 @@ class Statement(BaseModel):
     end_pos: Optional[int] = Field(default=None, exclude=True, repr=False)
 
 
+class DependencyScope(str, Enum):
+    """
+    Where a :class:`Dependency` points.
+
+    - ``INTRA``: to another statement in the *same* paper (a resolved
+      ``\\ref``/``\\cref``).
+    - ``INTER``: to another, *cited* paper (a ``\\cite``), identified as far as
+      the bibliography allows.
+    """
+
+    INTRA = "intra"
+    INTER = "inter"
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            for member in cls:
+                if member.value == value.lower():
+                    return member
+        return None
+
+
+class Dependency(BaseModel):
+    """
+    A directed dependency edge: statement ``source_index`` relies on the thing
+    this edge points at (another statement, or a result in a cited paper).
+
+    Attributes
+    ----------
+    source_index : int
+        Index of the depending statement in :attr:`ParseResult.statements`.
+    scope : DependencyScope
+        ``INTRA`` (same paper) or ``INTER`` (cited paper).
+    origin : str
+        Which part of the source statement the reference was found in:
+        ``"body"``, ``"proof"``, or ``"note"``.
+    raw : str
+        The raw LaTeX command matched, e.g. ``\\ref{thm:main}`` or
+        ``\\cite[Theorem 3.2]{Smith}``.
+    target_index : int, optional
+        (INTRA) Index of the referenced statement in
+        :attr:`ParseResult.statements`.
+    target_label : str, optional
+        (INTRA) The ``\\label`` key that was resolved.
+    cite_key : str, optional
+        (INTER) The bibliography key cited.
+    target_arxiv_id : str, optional
+        (INTER) arXiv id of the cited paper, if the bibliography gave one.
+    target_title : str, optional
+        (INTER) Title of the cited paper, if the bibliography gave one.
+    target_name : str, optional
+        (INTER) The specific result cited, e.g. ``"Theorem 3.2"`` — best-effort,
+        from the ``\\cite`` optional argument or nearby prose.
+    """
+
+    source_index: int
+    scope: DependencyScope
+    origin: str
+    raw: str
+
+    # INTRA
+    target_index: Optional[int] = None
+    target_label: Optional[str] = None
+
+    # INTER
+    cite_key: Optional[str] = None
+    target_arxiv_id: Optional[str] = None
+    target_title: Optional[str] = None
+    target_name: Optional[str] = None
+
+
 class ValidationLevel(str, Enum):
     """
     How strictly to validate parsed statements.
@@ -123,6 +194,10 @@ class ParseResult:
     method_used : str, optional
         Name of the parsing method that produced ``statements`` (useful with
         fallback chains, e.g. ``"tex"`` or ``"regex"``).
+    dependencies : list of Dependency, optional
+        Dependency edges between statements (intra-paper) and to cited papers
+        (inter-paper). ``None`` unless the parser was created with
+        ``dependencies=True``; otherwise a (possibly empty) list.
     """
 
     statements: Optional[List[Statement]] = None
@@ -130,3 +205,4 @@ class ParseResult:
     bibliography: Optional[Dict[str, Dict[str, str]]] = None
     bibliography_bibtex: Optional[bool] = None
     method_used: Optional[str] = None
+    dependencies: Optional[List["Dependency"]] = None

@@ -9,12 +9,15 @@ from .types import (
     ParseFocus,
     ValidationLevel,
     ArXivPaper,
+    Dependency,
+    DependencyScope,
 )
 
 __all__ = [
     "Parser",
     "Regex", "Tex", "Llm", "Method",
     "Statement", "ParseResult", "ParseFocus", "ValidationLevel", "ArXivPaper",
+    "Dependency", "DependencyScope",
     "STATEMENT_KINDS", "DEFAULT_METHOD",
     "paper_catalog", "parse_bibliography",
 ]
