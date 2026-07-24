@@ -1,0 +1,124 @@
+name: Release
+
+# Cuts a release: bumps the version in pyproject.toml, commits, tags, and
+# publishes a GitHub Release. Publishing that Release fires publish.yml, which
+# builds and uploads to PyPI.
+#
+# Run it with:
+#   gh workflow run release.yml -f bump=patch
+# or from the Actions tab (Release -> Run workflow).
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Which part of the version to increment"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      dry_run:
+        description: "Compute the new version but change nothing"
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # push the version-bump commit, tag, and Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compute the next version
+        id: version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os, re, tomllib
+
+          with open("pyproject.toml", "rb") as f:
+              current = tomllib.load(f)["project"]["version"]
+
+          if not re.fullmatch(r"\d+\.\d+\.\d+", current):
+              raise SystemExit(f"version {current!r} is not a plain MAJOR.MINOR.PATCH")
+
+          major, minor, patch = (int(p) for p in current.split("."))
+          bump = os.environ["BUMP"]
+          if bump == "major":
+              major, minor, patch = major + 1, 0, 0
+          elif bump == "minor":
+              minor, patch = minor + 1, 0
+          else:
+              patch += 1
+
+          print(f"current={current}")
+          print(f"new={major}.{minor}.{patch}")
+          PY
+        env:
+          BUMP: ${{ inputs.bump }}
+
+      - name: Refuse to reuse an existing tag
+        run: |
+          if git rev-parse -q --verify "refs/tags/v${{ steps.version.outputs.new }}" >/dev/null; then
+            echo "tag v${{ steps.version.outputs.new }} already exists"
+            exit 1
+          fi
+
+      - name: Write the new version to pyproject.toml
+        run: |
+          python - <<'PY'
+          import os, re, pathlib
+
+          new = os.environ["NEW"]
+          path = pathlib.Path("pyproject.toml")
+          text = path.read_text(encoding="utf-8")
+          # Only the [project] version key, which is the first `version = "..."`
+          # at the start of a line -- never a dependency pin.
+          text, count = re.subn(
+              r'(?m)^version = "\d+\.\d+\.\d+"',
+              f'version = "{new}"',
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("could not locate the project version in pyproject.toml")
+          path.write_text(text, encoding="utf-8")
+          PY
+        env:
+          NEW: ${{ steps.version.outputs.new }}
+
+      - name: Verify the package still builds
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*
+
+      - name: Summary
+        run: |
+          echo "### Release v${{ steps.version.outputs.new }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- bump: \`${{ inputs.bump }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ${{ steps.version.outputs.current }} → **${{ steps.version.outputs.new }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- dry run: \`${{ inputs.dry_run }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit, tag, and publish the Release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add pyproject.toml
+          git commit -m "Release v${NEW}"
+          git tag -a "v${NEW}" -m "v${NEW}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
+          git push origin "v${NEW}"
+
+          gh release create "v${NEW}" \
+            --title "v${NEW}" \
+            --generate-notes
+        env:
+          NEW: ${{ steps.version.outputs.new }}
+          GH_TOKEN: ${{ github.token }}
