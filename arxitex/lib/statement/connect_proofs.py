@@ -1,11 +1,6 @@
-import re
 from typing import List
 from arxitex.types import Statement
-
-_REF_RE = re.compile(
-    r'\\(?:[a-zA-Z]*[Rr]ef|autoref|cref|Cref|eqref)\s*\{([^}]*)\}'
-    r'|\\hyperref\s*\[([^\]]*)\]'
-)
+from .refs import REF_RE, referenced_labels as _referenced_labels
 
 THEOREM_KINDS = { "theorem", "proposition", "lemma", "corollary" }
 
@@ -13,16 +8,6 @@ THEOREM_KINDS = { "theorem", "proposition", "lemma", "corollary" }
 # adjacency fallback walks back over these to reach the statement being proved —
 # a proof proves a theorem/lemma/prop/corollary, not the remark next to it.
 _COMMENTARY_KINDS = { "remark", "note", "observation", "convention", "notation" }
-
-
-def _referenced_labels(text: str) -> set:
-    """Labels the text points at via \\ref/\\Cref/\\hyperref."""
-    out = set()
-    for m in _REF_RE.finditer(text or ""):
-        for group in m.groups():
-            if group:
-                out.update(part.strip() for part in group.split(",") if part.strip())
-    return out
 
 
 def _inside(inner: Statement, outer: Statement) -> bool:
@@ -75,7 +60,7 @@ def connect_proofs(statements: List[Statement]):
         # Corollary 1.6"); collect every label it resolves.
         targets = []
         if proof.note:
-            for m in _REF_RE.finditer(proof.note):
+            for m in REF_RE.finditer(proof.note):
                 content = m.group(1) or m.group(2)
                 if not content:
                     continue
