@@ -79,25 +79,19 @@ def test_nested_child_reference_is_dropped():
 
 
 # --- inter-paper -----------------------------------------------------------
-
-_BIB = {
-    "Smith": {"title": "On Foo Spaces", "arxiv_id": "1801.00001"},
-    "Jones": {"title": "Bar Theory", "arxiv_id": "1902.00002"},
-}
-
+# Edges carry only cite_key (+ best-effort target_name); paper identity is
+# resolved by keying cite_key into ParseResult.bibliography, not stored here.
 
 def test_cite_with_optional_note_extracts_theorem_name():
     statements = [
         _stmt("theorem", r"By \cite[Theorem 3.2]{Smith}, this holds.",
               labels=["thm:x"]),
     ]
-    edges = resolve_dependencies(statements, _BIB)
+    edges = resolve_dependencies(statements)
     assert len(edges) == 1
     e = edges[0]
     assert e.scope == DependencyScope.INTER
     assert e.cite_key == "Smith"
-    assert e.target_arxiv_id == "1801.00001"
-    assert e.target_title == "On Foo Spaces"
     assert e.target_name == "Theorem 3.2"
 
 
@@ -106,28 +100,28 @@ def test_preceding_prose_name_is_captured():
         _stmt("theorem", r"By Lemma 2.1 of \cite{Jones} we are done.",
               labels=["thm:x"]),
     ]
-    edges = resolve_dependencies(statements, _BIB)
+    edges = resolve_dependencies(statements)
     assert len(edges) == 1
     assert edges[0].cite_key == "Jones"
     assert edges[0].target_name == "Lemma 2.1"
 
 
-def test_unresolved_cite_still_yields_an_edge():
+def test_cite_without_name_leaves_target_name_none():
     statements = [
         _stmt("theorem", r"See \cite{Unknown}.", labels=["thm:x"]),
     ]
-    edges = resolve_dependencies(statements, _BIB)
+    edges = resolve_dependencies(statements)
     assert len(edges) == 1
     e = edges[0]
     assert e.cite_key == "Unknown"
-    assert e.target_arxiv_id is None and e.target_title is None
+    assert e.target_name is None
 
 
 def test_multi_key_cite_yields_one_edge_per_key():
     statements = [
         _stmt("theorem", r"See \cite{Smith,Jones}.", labels=["thm:x"]),
     ]
-    edges = resolve_dependencies(statements, _BIB)
+    edges = resolve_dependencies(statements)
     assert sorted(e.cite_key for e in edges) == ["Jones", "Smith"]
 
 
@@ -145,4 +139,4 @@ def test_no_dependencies_when_nothing_references():
     statements = [
         _stmt("theorem", "A standalone claim.", labels=["thm:x"]),
     ]
-    assert resolve_dependencies(statements, _BIB) == []
+    assert resolve_dependencies(statements) == []

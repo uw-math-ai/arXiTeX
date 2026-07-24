@@ -32,6 +32,16 @@ def _strip_latex(text: str) -> str:
     return ' '.join(text.split()).strip()
 
 
+# The full, unorganized citation kept verbatim (whitespace-collapsed) as a
+# lossless fallback: `title` is a best-effort structured guess that some bib
+# styles defeat, so `raw` preserves everything for later re-parsing/matching.
+_RAW_MAX = 1200
+
+
+def _norm_ws(text: str) -> str:
+    return ' '.join((text or '').split())
+
+
 _AMSBIB_ENTRY_RE = re.compile(
     r'\\bib\{([^}]+)\}\{[^}]+\}\{(.*?)\n\}',
     re.DOTALL
@@ -60,8 +70,8 @@ def _parse_amsrefs_content(content: str, labels: Optional[List[str]]) -> dict:
         if arxiv_match:
             metadata["arxiv_id"] = arxiv_match.group(1)
 
-        if metadata:
-            bibliography[cite_key] = metadata
+        metadata["raw"] = _norm_ws(m.group(0))[:_RAW_MAX]
+        bibliography[cite_key] = metadata
 
     return bibliography
 
@@ -97,8 +107,8 @@ def _parse_biblatex_bbl(content: str, labels: Optional[List[str]]) -> dict:
             if arxiv_match:
                 metadata["arxiv_id"] = arxiv_match.group(1)
 
-        if metadata:
-            bibliography[cite_key] = metadata
+        metadata["raw"] = _norm_ws(m.group(0))[:_RAW_MAX]
+        bibliography[cite_key] = metadata
 
     return bibliography
 
@@ -131,8 +141,8 @@ def _parse_bibitem_from_dir(paper_dir: Path, labels: Optional[List[str]]) -> dic
                     if stripped:
                         metadata['title'] = stripped[:500]
 
-                    if metadata:
-                        bibliography[cite_key] = metadata
+                    metadata['raw'] = _norm_ws(raw)[:_RAW_MAX]
+                    bibliography[cite_key] = metadata
 
         except Exception as e:
             print(f"Error parsing {tex_file}: {e}")
@@ -252,6 +262,15 @@ def parse_bibliography_from_dir(paper_dir: Path, labels: Optional[List[str]] = N
                 }
 
                 metadata = {k: v for k, v in metadata.items() if v}
+
+                # bibtexparser gives fields, not the source substring; rebuild a
+                # lossless raw citation by joining them (skip the key/type).
+                raw = _norm_ws("; ".join(
+                    f"{k}={v}" for k, v in entry.items()
+                    if k not in ("ID", "ENTRYTYPE") and v
+                ))
+                if raw:
+                    metadata["raw"] = raw[:_RAW_MAX]
 
                 if metadata:
                     bibliography[cite_key] = metadata

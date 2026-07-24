@@ -284,11 +284,14 @@ class Parser:
             bibliography, bibliography_bibtex = parse_bibliography_from_dir(paper_dir)
 
         if do_dependencies:
-            dependencies = resolve_dependencies(statements or [], bibliography)
+            dependencies = resolve_dependencies(statements or [])
 
-        # The bibliography may have been parsed only to resolve citations; don't
-        # surface it unless the focus actually asked for it.
-        expose_bibliography = self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+        # Inter-paper edges key by cite_key into the bibliography, so surface it
+        # whenever dependencies were requested (as well as when the focus asks).
+        expose_bibliography = (
+            self.focus in (ParseFocus.ALL, ParseFocus.BIBLIOGRAPHY)
+            or do_dependencies
+        )
 
         return ParseResult(
             statements=statements,

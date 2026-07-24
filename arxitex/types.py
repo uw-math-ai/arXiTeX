@@ -107,14 +107,14 @@ class Dependency(BaseModel):
     target_label : str, optional
         (INTRA) The ``\\label`` key that was resolved.
     cite_key : str, optional
-        (INTER) The bibliography key cited.
-    target_arxiv_id : str, optional
-        (INTER) arXiv id of the cited paper, if the bibliography gave one.
-    target_title : str, optional
-        (INTER) Title of the cited paper, if the bibliography gave one.
+        (INTER) The bibliography key cited. Use it to look up the cited paper in
+        :attr:`ParseResult.bibliography` (``title``, ``arxiv_id``, ``raw``);
+        paper identity is intentionally *not* duplicated onto every edge.
     target_name : str, optional
         (INTER) The specific result cited, e.g. ``"Theorem 3.2"`` — best-effort,
-        from the ``\\cite`` optional argument or nearby prose.
+        from the ``\\cite`` optional argument or nearby prose. This is
+        citation-site-specific, so it lives on the edge rather than the
+        bibliography.
     """
 
     source_index: int
@@ -128,8 +128,6 @@ class Dependency(BaseModel):
 
     # INTER
     cite_key: Optional[str] = None
-    target_arxiv_id: Optional[str] = None
-    target_title: Optional[str] = None
     target_name: Optional[str] = None
 
 

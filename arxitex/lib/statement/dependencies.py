@@ -96,51 +96,41 @@ def _intra_edges(
     return edges
 
 
-def _inter_edges(
-    i: int,
-    origin: str,
-    text: str,
-    bibliography: Dict[str, dict],
-) -> List[Dependency]:
+def _inter_edges(i: int, origin: str, text: str) -> List[Dependency]:
     edges: List[Dependency] = []
     for note, keys, raw, start in iter_citations(text):
         name = note or _preceding_name(text, start)
         for key in keys:
-            meta = bibliography.get(key) or {}
+            # cite_key is a foreign key into ParseResult.bibliography; paper
+            # identity (title/arxiv/raw) is looked up there, not copied here.
             edges.append(Dependency(
                 source_index=i,
                 scope=DependencyScope.INTER,
                 origin=origin,
                 raw=raw,
                 cite_key=key,
-                target_arxiv_id=meta.get("arxiv_id"),
-                target_title=meta.get("title"),
                 target_name=name,
             ))
     return edges
 
 
-def resolve_dependencies(
-    statements: List[Statement],
-    bibliography: Optional[Dict[str, dict]] = None,
-) -> List[Dependency]:
+def resolve_dependencies(statements: List[Statement]) -> List[Dependency]:
     """Extract intra- and inter-paper dependency edges from *statements*.
+
+    Inter-paper edges carry only the ``cite_key`` (and a best-effort
+    ``target_name``); resolve the cited paper's identity by keying that into
+    :attr:`ParseResult.bibliography`.
 
     Parameters
     ----------
     statements : list of Statement
         The final statements (proofs attached), in document order.
-    bibliography : dict, optional
-        ``cite_key -> {"title", "arxiv_id"}`` (as produced by
-        :func:`arxitex.lib.paper.bibliography.parse_bibliography_from_dir`). Used
-        only to enrich inter-paper edges; missing keys still yield an edge.
 
     Returns
     -------
     list of Dependency
         Deduplicated edges, in ``(source_index, origin)`` scan order.
     """
-    bibliography = bibliography or {}
     label_to_idx = _label_index(statements)
 
     edges: List[Dependency] = []
@@ -153,7 +143,7 @@ def resolve_dependencies(
             if not text:
                 continue
             edges += _intra_edges(i, statement, origin, text, statements, label_to_idx)
-            edges += _inter_edges(i, origin, text, bibliography)
+            edges += _inter_edges(i, origin, text)
 
     # De-duplicate identical edges (a label/cite repeated within the same text).
     seen = set()
